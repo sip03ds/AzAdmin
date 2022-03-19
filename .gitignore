@@ -1,0 +1,11 @@
+./PoWeRShell/AAD_AD_Activate_License/users_tolicense.txt
+./PoWeRShell/AD_Find_Hypervisor/Computers.txt
+./PoWeRShell/AD_FindIPForHosts/servers.txt
+./PoWeRShell/AD_SetAttribute/UserNames.txt
+./PoWeRShell/DSC_GuestConfigTest/GuestConfig/localhost.mof
+./PoWeRShell/InTune_AppExport/*
+./PoWeRShell/W10_Backup_Phase1/DiskUsageReport.csv
+./PoWeRShell/W10_Backup_Phase1/ServerList.txt
+./PoWeRShell/Modules/*
+./PoWeRShell/InTune_Scripts/*
+./PoWeRShell/InTune_Packages/*
