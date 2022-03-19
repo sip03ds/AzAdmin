@@ -1,0 +1,1488 @@
+#Windows 10 - enable Administrator
+Get-LocalUser -Name "Administrator" | Enable-LocalUser
+$Secure_String_Pwd = ConvertTo-SecureString "RHCE2h@ckAnamet" -AsPlainText -Force
+Set-LocalUser -Name "Administrator" -Password $Secure_String_Pwd
+Remove-LocalUser -Name "user"
+add-computer –domainname $dom -Credential VIONET\distathopoulos -restart –force 
+Add-LocalGroupMember -Group Administrators $grp1for
+Add-LocalGroupMember -Group Administrators $grp2
+Add-LocalGroupMember -Group "Remote Desktop Users" anm_company_all
+Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0 
+
+
+Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\' -Name Shell -Value 'powershell.exe'
+
+sconfig
+
+# Admin Pass:
+Net User Administrator *
+
+# Change computer name
+Rename-Computer -NewName vsr5anmasp -ComputerName .
+
+# Set IP Address:
+netsh interface ipv4 show interfaces (to get ID) 
+netsh interface ipv4 set address name=”ID” source=static address=StaticIP mask=SubnetMask gateway=DefaultGateway
+
+Set-NetIPInterface -InterfaceIndex 12 -InterfaceMetric 10
+New-NetIPaddress -InterfaceIndex 12 -IPAddress 192.0.2.2 -PrefixLength 24 -DefaultGateway 192.0.2.1
+New-NetIPaddress -InterfaceIndex 12 -IPAddress 10.25.71.17 -PrefixLength 24 -DefaultGateway 10.25.71.1
+
+Set-DNSClientServerAddress –InterfaceIndex 10 -ServerAddresses 10.15.18.10,10.1.21.13,10.1.21.14
+Set-DNSClientServerAddress –InterfaceIndex 12 -ResetServerAddresses
+Get-NetIpAddress -InterfaceIndex 15 | Remove-NetIpAddress
+Get-NetIpAddress -InterfaceIndex 15 | Remove-NetRoute
+Get-NetIpConfiguration
+
+Remove-NetIpAddress -InterfaceIndex 12
+Remove-NetRoute -InterfaceIndex 12
+
+Set-NetIPInterface -InterfaceIndex 21 -InterfaceMetric 10
+Get-NetIPInterface
+
+get-netroute
+
+Set-NetIPInterface -InterfaceIndex 21 -AutomaticMetric enabled
+
+
+# Set DNS:
+add dnsserver name=interfaceid address=ipofdnsserver index=1
+
+# Join Domain:
+netdom join vsr0nvmfrm /domain:corp.vionet.gr /userd:distathopoulos /passwordd:*
+
+add-computer –domainname $dom -Credential VIONET\distathopoulos -restart –force 
+Add-LocalGroupMember -Group Administrators $grp1
+Add-LocalGroupMember -Group Administrators $grp2
+
+# Add Users to Administrators Group:
+Net localgroup administrators /add DomainName\UserName
+
+# logout:
+logoff
+
+# Rename Net Adapter name 
+Rename-NetAdapter -Name "Ethernet" -NewName "ManagementAdapter"
+
+
+Rename-NetAdapter -Name "Embedded LOM 1 Port 1" -NewName "ilo"
+
+# Enable remote desktop
+cd  %windir%\system32
+cscript %windir%\system32\scregedit.wsf /ar 0
+cscript %windir%\system32\scregedit.wsf /ar /v
+
+# verify terminal session
+query session /server: <servername or IP>
+
+# disasble IPv6
+powershell
+Disable-NetAdapterBinding -InterfaceAlias "Ethernet" -ComponentId ms_tcpip6
+
+#View net capabilities:
+Get-NetAdapterBinding -InterfaceAlias Ethernet
+
+# Label volume C:\ as SYS
+$drive = gwmi win32_volume -Filter "DriveLetter = 'C:'"
+$drive.Label = "SYS"
+$drive.put()
+
+# View network shares
+net view \\servername /all
+
+# mount network share 
+net use z: /User:VIONET\distathopoulos //servername/share 
+
+# umount network share
+net use z: /delete
+
+# run msu update
+wusa <path to msu file> /quiet
+
+# Enable .NET 3.5 
+# Mount DVD 
+DISM /Online /Enable-Feature /FeatureName:NetFx3 /All /LimitAccess /Source:D:\sources\sxs
+
+# Enable SSH
+Get-WindowsCapability -Online | ? Name -like 'OpenSSH*'
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service sshd
+Set-Service -Name sshd -StartupType 'Automatic'
+Get-NetFirewallRule -Name *ssh*
+
+New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force
+
+
+
+
+
+# SET POWER PLAN
+Powercfg -SETACTIVE SCHEME_MIN
+
+Powercfg -setacvalueindex scheme_current sub_processor PROCTHROTTLEMIN 100
+Powercfg -setactive scheme_current
+
+Powercfg -setacvalueindex scheme_current sub_processor PERFBOOSTMODE 0
+Powercfg -setactive scheme_current
+
+
+Processor Performance Increase Threshold defines the utilization value above which a processor’s performance state will increase. Larger values slow the rate of increase for the performance state in response to increased activities.
+Processor Performance Decrease Threshold defines the utilization value below which a processor’s performance state will decrease. Larger values increase the rate of decrease for the performance state during idle periods.
+Processor Performance Increase Policy and Processor Performance Decrease Policy determine which performance state should be set when a change happens. "Single" policy means it chooses the next state. "Rocket" means the maximum or minimal power performance state. "Ideal" tries to find a balance between power and performance.
+
+Powercfg.exe -setacvalueindex scheme_current sub_processor PERFINCPOL 2
+Powercfg.exe -setacvalueindex scheme_current sub_processor PERFDECPOL 1
+Powercfg.exe -setacvalueindex scheme_current sub_processor PERFINCTHRESHOLD 10
+Powercfg.exe -setacvalueindex scheme_current sub_processor PERFDECTHRESHOLD 8
+Powercfg.exe /setactive scheme_current
+Powercfg -setacvalueindex scheme_current sub_processor CPMINCORES 100
+Powercfg -setactive scheme_current
+Powercfg -setacvalueindex scheme_current sub_processor DISTRIBUTEUTIL 0
+Powercfg -setactive scheme_current
+
+
+
+
+# Install Hyper-V
+Get-WindowsFeature *Hyper-V*
+Install-WindowsFeature -Name Hyper-V -IncludeManagementTools -Restart
+
+# Configure Hyper-V
+
+
+
+
+
+
+
+
+
+
+6 network adapters 
+------------------
+1 vsr5anmasp          9457.a5c4.142f
+5 network adapters    
+LOM                   9457.a5c4.1430
+Broadcom 1            3ca8.2af3.d0a3
+Broadcom 2            3ca8.2af3.d0a2
+Broadcom 3            3ca8.2af3.d0aN --1
+Broadcom 4            3ca8.2af3.d0a0
+
+
+Configure LACP
+--------------
+Rename-NetAdapter -Name "Ethernet" -NewName "lacp1"
+Rename-NetAdapter -Name "Ethernet 2" -NewName "lacp2"
+Rename-NetAdapter -Name "Ethernet 3" -NewName "lacp3"
+Rename-NetAdapter -Name "Ethernet 4" -NewName "lacp4"
+
+$Po9 = New-NetLbfoTeam -Name Po9 -TeamMembers "lacp1","lacp2","lacp3","lacp4" -TeamingMode LACP -LoadBalancingAlgorithm HyperVPort
+get-netlbfoteam
+
+
+Set-VMHost -VirtualHardDiskPath 'D:\vServers'
+Set-VMHost -VirtualMachinePath 'D:\vServers'
+Get-VMHost | select *
+
+
+
+New-VMSwitch -name vSwitch -NetAdapterName "Po2" -AllowManagementOS $false
+
+Remove-VMSwitch -name vSwitch
+Remove-NetLbfoTeam -Name Po2
+
+Get-VMNetworkAdapter -VMName *
+Get-VMNetworkAdapter -VMName dc2anmasp | Disconnect-VMNetworkAdapter
+Get-VMNetworkAdapter -VMName * | Disconnect-VMNetworkAdapter
+
+
+
+Import VM
+---------
+Import-VM -Path "D:\vServers\gpo0anmasp\Virtual Machines\A2432EB4-085F-4CAC-B179-D67291883C9C.vmcx"
+$report = Compare-VM -Path "D:\vServers\gpo0anmasp\Virtual Machines\A2432EB4-085F-4CAC-B179-D67291883C9C.vmcx"
+$report.Incompatibilities | Format-Table -AutoSize  
+$report.Incompatibilities[1].Source | Disconnect-VMNetworkAdapter 
+$report.Incompatibilities[0].Source | Disconnect-VMNetworkAdapter       
+Compare-VM -CompatibilityReport $report
+Import-VM $report
+Get-VM * | Format-Table Name, Version
+Update-VMVersion "gpo0anmasp"
+Get-VMNetworkAdapter -VMName "gpo0anmasp"  | Connect-VMNetworkAdapter -SwitchName vSwitch
+Start-VM "gpo0anmasp"
+Get-VMHostSupportedVersion -Default 
+Get-VMDvdDrive -VMName anm1w900
+Get-VMDvdDrive -VMName anm1w900 -ControllerNumber 0 | Remove-VMDvdDrive
+
+
+
+
+
+
+
+
+
+
+CREATE A VM:
+------------
+cd d:\vServers
+$name="prntsrv1aeiasp"
+$ram=4GB
+$hddsize=90GB
+$cpu=6
+new-item -ItemType Directory $name 
+cd $name 
+new-item -ItemType Directory "Virtual Hard Disks"
+cd "Virtual Hard Disks"
+New-VHD -Path .\"$name".vhdx  -SizeBytes "$hddsize" -Fixed
+New-VM -Name $name -MemoryStartupBytes $ram -BootDevice VHD -VHDPath "d:\vServers\$name\Virtual Hard Disks\$name.vhdx" -Path "d:\vServers\" -Generation 2 -Switch vSwitch
+Set-VMProcessor $name -Count $cpu
+Add-VMDvdDrive -VMName $name -Path D:\transfer\SW_DVD9_Win_Server_STD_CORE_2019_64Bit_English_DC_STD_MLF_X21-96581.iso
+Set-VMNetworkAdapterVlan -VMName $name -Access -VlanId 98
+Rename-VMNetworkAdapter -VMName $name -NewName $name
+$firmware=Get-VMFirmware -VMName "$name"
+$bootorder = $firmware.BootOrder
+$hdd=$bootorder[0]
+$net=$bootorder[1]
+$dvd=$bootorder[2]
+Set-VMFirmware $name -BootOrder $dvd,$hdd,$net
+start-vm $name
+
+
+
+Set-VMFirmware "Test VM" -EnableSecureBoot On
+
+Set-VMNetworkAdapterVlan -VMName vms1nvmfrm -Access -VlanId 98
+Get-VM vms1nvmfrm | Add-VMHardDiskDrive -ControllerType SCSI -ControllerNumber 0
+Set-VMMemory vms1nvmfrm -DynamicMemoryEnabled $false
+Add-VMHardDiskDrive -VMName fls4anmasp -Path 'D:\vServers\fls4anmasp\Virtual Hard Disks\fls4anmasp_data.vhdx'
+Get-VM dfs1anmasp | Add-VMDvdDrive  -ControllerNumber 0
+Rename-VMNetworkAdapter -VMName vms1nvmfrm -NewName vms1nvmfrm 
+
+Add-VMDvdDrive -VMName fls3aeiasp -Path D:\SW_DVD9_Win_Server_STD_CORE_2019_64Bit_English_DC_STD_MLF_X21-96581.iso
+
+Set-VMDvdDrive -VMName fls4anmasp -Path D:\transfer\SW_DVD9_Win_Server_STD_CORE_2019_64Bit_English_DC_STD_MLF_X21-96581.ISO 
+Set-VMProcessor dfs1anmasp -Count 4
+
+New-NetIPaddress -InterfaceIndex 12 -IPAddress 10.25.71.17 -PrefixLength 24 -DefaultGateway 10.25.71.1
+Set-DNSClientServerAddress –InterfaceIndex 12 -ServerAddresses 192.0.2.4,192.0.2.5
+
+
+
+-- Convert VHD Dynamic to static 
+Convert-VHD -Path .\utl1anmasp_diff.vhdx -DestinationPath .\utl1anmasp.vhdx –VHDType Fixed
+
+REMOVE A VM:
+------------
+stop-vm dpm2anmasp
+Remove-VM -Name dpm2anmasp
+
+Change vHDX TYPE (from dynamic to static) 
+----------------
+Get-VHD -Path .\db.vhdx
+Convert-VHD -Path "d:\vservers\sql1anmasp\virtual hard disks\sql1anmasp.vhdx" -DestinationPath "d:\vservers\sql1anmasp\virtual hard disks\sql1anmasp.vhdx" -VHDType Fixed 
+Convert-VHD -Path "d:\vservers\sql1anmasp\virtual hard disks\db.vhdx" -DestinationPath "d:\vservers\sql1anmasp\sql1anmasp_db.vhdx" -VHDType Fixed 
+
+Convert-VHD -Path "d:\vservers\sql1anmasp\virtual hard disks\db_log.vhdx" -DestinationPath "d:\vservers\sql1anmasp\sql1anmasp_db_log.vhdx" -VHDType Fixed 
+Convert-VHD -Path "d:\vservers\sql1anmasp\virtual hard disks\db_temp.vhdx" -DestinationPath "d:\vservers\sql1anmasp\sql1anmasp_db_temp.vhdx" -VHDType Fixed 
+Convert-VHD -Path "d:\vservers\sql1anmasp\virtual hard disks\temp_log.vhdx" -DestinationPath "d:\vservers\sql1anmasp\sql1anmasp_db_temp_log.vhdx" -VHDType Fixed 
+Convert-VHD -Path "d:\vservers\sql1anmasp\virtual hard disks\sys_db.vhdx" -DestinationPath "d:\vservers\sql1anmasp\sql1anmasp_sys_db.vhdx" -VHDType Fixed 
+Convert-VHD -Path "d:\vservers\sql1anmasp\virtual hard disks\db_bck.vhdx" -DestinationPath "d:\vservers\sql1anmasp\sql1anmasp_db_bck.vhdx" -VHDType Fixed 
+
+MERGE avhdx with vhdx 
+---------------------
+Merge-VHD -Path '<path to AVHDX>' -DestinationPath '<path to main VHDX disk'
+
+Expand a HDD
+------------
+Resize-VHD -Path .\sql1anmasp_db.vhdx -SizeBytes 500GB
+
+
+Find disk capacity:
+$disk = Get-WmiObject Win32_LogicalDisk -ComputerName vsr2anmasp -Filter "DeviceID='D:'" | Select-Object Size,FreeSpace
+$disk.Size
+$disk.FreeSpace
+
+START DISK:
+-----------
+Get-Disk | Where-Object IsOffline –Eq $True
+Initialize-Disk -Number 1
+New-Partition –DiskNumber 1 -AssignDriveLetter –UseMaximumSize
+Get-Volume
+Format-Volume -DriveLetter D -FileSystem NTFS
+
+# Check Block Size:
+Get-WmiObject -Class Win32_Volume | Select-Object Label, BlockSize | Format-Table -AutoSize
+
+WORK FOLDERS:
+-------------
+Install-WindowsFeature -Name FS-SyncShareService,Web-WHC 
+Restart-Computer
+New-Item -ItemType Directory workfolders 
+Remove-Item  workfolders
+Get-Service
+Start-Service -Name SyncShareSvc
+New-SyncShare -Name "workfolders" -Path "D:\workfolders" -User "anm_company_all" 
+Set-SyncServerSetting -AdministratorEmail "anm_it_helpdesk@anamet.gr"
+Set-SyncShare -Name "workfolders" -RequireEncryption $true -RequirePasswordAutoLock $true -User "anm_it_he
+Get-SyncShare
+Get-SyncServerSetting
+
+
+FILE_SERVER:
+------------
+Install-WindowsFeature -Name File-Services,FS-BranchCache,FS-Data-Deduplication,FS-Resource-Manager,FS-VSS-Agent -IncludeManagementTools -Restart
+Restart-Computer
+New-Item -ItemType Directory D:\MRK\general
+
+
+
+Enable-DedupVolume D:
+Start-DedupJob -Volume D: -Type Optimization
+
+
+DISABLE inheritance/remove inherited perms
+public void SetAccessRuleProtection (bool isProtected, bool preserveInheritance);
+-------------------
+$acl = Get-Acl D:\MRK\general
+$acl.SetAccessRuleProtection($true,$false)
+$acl | Set-Acl D:\MRK\general
+Get-ACL D:\MRK\general | fl
+
+SET OWNER
+---------
+$acl = Get-Acl D:\MRK\general
+$object = New-Object System.Security.Principal.Ntaccount("VIONET\anm_mrk_grp_1")
+$acl.SetOwner($object)
+$acl | Set-Acl D:\MRK\general
+Get-ACL D:\MRK\general | fl
+
+
+SET Explicit NTFS permissions (FULL CONTROL)
+--------------------------------------------
+FULL
+
+Set-Variable -Name "dir" -Value "D:\MRK\general"
+
+$acl = Get-ACL $dir
+$AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("VIONET\anm_mrk_general_full","FullControl","Allow")
+$acl.SetAccessRule($AccessRule)
+$acl | Set-Acl D:\MRK\general
+Get-ACL D:\MRK\general | fl
+
+READ
+$acl = Get-ACL D:\MRK\general
+$AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("VIONET\anm_mrk_general_r","Read","Allow")
+$acl.SetAccessRule($AccessRule)
+$acl | Set-Acl D:\MRK\general
+Get-ACL D:\MRK\general | fl
+
+WRITE+DELETE
+$acl = Get-ACL D:\MRK\general
+$AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("VIONET\anm_mrk_general_rw","DeleteSubdirectoriesAndFiles, Modify, Synchronize","Allow")
+$acl.SetAccessRule($AccessRule)
+$acl | Set-Acl D:\MRK\general
+Get-ACL D:\MRK\general | fl
+
+REMOVE NTFS permissions 
+-----------------------
+$acl = Get-ACL D:\MRK\general
+$AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("CREATOR OWNER","268435456","Allow")
+$acl.RemoveAccessRule($AccessRule)
+$acl | Set-Acl D:\MRK\general 
+$acl = Get-ACL D:\MRK\general
+$AccessRule = $AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("NT AUTHORITY\SYSTEM","FullControl","Allow")
+$acl.RemoveAccessRule($AccessRule)
+$acl | Set-Acl D:\MRK\general "Fu
+$acl = Get-ACL D:\MRK\general
+$AccessRule = $AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("BUILTIN\Administrators","FullControl","Allow")
+$acl.RemoveAccessRule($AccessRule)
+$acl | Set-Acl D:\MRK\general
+$acl = Get-ACL D:\MRK\general
+$AccessRule = $AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("BUILTIN\Users","CreateFiles, AppendData","Allow")
+$acl.RemoveAccessRule($AccessRule)
+$acl | Set-Acl D:\MRK\general
+$acl = Get-ACL D:\MRK\gen
+$AccessRule = $AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("BUILTIN\Users","ReadAndExecute, Synchronize","Allow")
+$acl.RemoveAccessRule($AccessRule)
+$acl | Set-Acl D:\MRK\general
+Get-ACL D:\MRK\general | fl
+
+
+#CHANGE OWNER of FILES
+Set-Variable -Name "dir" -Value "E:\Metalign"
+$Account = New-Object -TypeName System.Security.Principal.NTAccount -ArgumentList 'VIONET\distathopoulos';
+$ItemList = Get-ChildItem -Path $dir -Recurse;
+foreach ($Item in $ItemList) { $Acl = $null; $Acl = Get-Acl -Path $Item.FullName; $Acl.SetOwner($Account); Set-Acl -Path $Item.FullName -AclObject $Acl; }
+
+#CHECK EFFECTIVE PERMISSIONS
+$Folder = "E:\FISC\Customer_Master_Data\"
+$User = Read-Host "Input the sAMAccountName of user"
+$permission = (Get-Acl $Folder).Access | ?{$_.IdentityReference -match $User} | Select IdentityReference,FileSystemRights
+If ($permission){ $permission | % {Write-Host "User $($_.IdentityReference) has '$($_.FileSystemRights)' rights on folder $folder"} } Else { Write-Host "$User Doesn't have any permission on $Folder" }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##### NEW ######
+$acl = Get-ACL $dir
+$acl.SetAccessRuleProtection($true,$true)
+$AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("VIONET\anm_it_grp_1","FullControl","ContainerInherit, ObjectInherit", "InheritOnly","Allow")
+$acl.SetAccessRule($AccessRule)
+$AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("VIONET\anm_hr_grp_1","FullControl","Allow")
+$acl.SetAccessRule($AccessRule)
+$acl | Set-Acl  $dir
+Get-ACL  $dir | select * | fl 
+
+New-SmbShare -Name "mrk_general$" -Path "D:\MRK\general" -FullAccess "VIONET\Domain Users" -Description "Marketing General" -FolderEnumerationMode AccessBased
+
+
+FSRM
+----
+New-Item -ItemType Directory D:\StorageReports\Incident
+New-Item -ItemType Directory D:\StorageReports\Scheduled
+New-Item -ItemType Directory D:\StorageReports\Interactive
+Set-FsrmSetting -SmtpServer smtstlmrs.corp.vionet.gr -AdminEmailAddress it@anamet.gr -FromEmailAddress fls3anmasp@anamet.gr -ReportLocationIncident D:\StorageReports\Incident -ReportLocationOnDemand D:\StorageReports\Interactive -ReportLocationScheduled D:\StorageReports\Scheduled -ReportLargeFileMinimum 5242880 -ReportLimitMaxDuplicateGroup 500000 -ReportLimitMaxFile 345476568 -ReportLimitMaxFilesPerDuplicateGroup 345476568
+Get-FsrmSetting
+
+-file group
+New-FsrmFileGroup -Name "mrk_general" -IncludePattern "*" -ExcludePattern @("*.txt", "*.docx") -Description "mrk_general"
+Set-FsrmFileGroup -Name "mrk_general" -IncludePattern "*" -ExcludePattern @("*.txt", "*.docx") -Description "mrk_general"
+-file screen template
+$Notification = New-FsrmAction -Type Email -MailTo "[Admin Email];[File Owner]" -Subject "Unauthorized file from the [Violated File Group] file group detected" -Body "User [Source Io Owner] attempted to save [Source File Path] to [File Screen Path] on the [Server] server. This file is in the [Violated File Group] file group, which is not permitted on the server." -RunLimitInterval 120
+New-FsrmFileScreenTemplate -Name "mrk_general" -Description "mrk_general" -Active -IncludeGroup "mrk_general" -Notification $Notification
+-file screen
+New-FsrmFileScreen -Path "D:\MRK\general" -Template "mrk_general"
+
+
+
+
+
+
+Set-FsrmFileGroup -Name "fisc_tax" -IncludePattern "*" -ExcludePattern @("*.csv", "*.docx","*.jpg","*.msg","*.pdf","*.png","*.tif","*.tmp","*.txt","*.xlsx","*.xml") -Description "fisc_tax"
+Set-FsrmFileGroup -Name "fisc_t_and_e" -IncludePattern "*" -ExcludePattern @("*.csv", "*.docx","*.jpg","*.msg","*.pdf","*.png","*.tif","*.tmp","*.txt","*.xlsx","*.xml") -Description "fisc_t_and_e"
+Set-FsrmFileGroup -Name "fisc_supplier_master_data" -IncludePattern "*" -ExcludePattern @("*.csv", "*.docx","*.jpg","*.msg","*.pdf","*.png","*.tif","*.tmp","*.txt","*.xlsx","*.xml") -Description "fisc_supplier_master_data"
+Set-FsrmFileGroup -Name "fisc_postings" -IncludePattern "*" -ExcludePattern @("*.csv", "*.docx","*.jpg","*.msg","*.pdf","*.png","*.tif","*.tmp","*.txt","*.xlsx","*.xml") -Description "fisc_postings"
+Set-FsrmFileGroup -Name "fisc_customer_master_data" -IncludePattern "*" -ExcludePattern @("*.csv", "*.docx","*.jpg","*.msg","*.pdf","*.png","*.tif","*.tmp","*.txt","*.xlsx","*.xml") -Description "fisc_customer_master_data"
+Set-FsrmFileGroup -Name "fisc_payments" -IncludePattern "*" -ExcludePattern @("*.csv", "*.docx","*.jpg","*.msg","*.pdf","*.png","*.tif","*.tmp","*.txt","*.xlsx","*.xml") -Description "fisc_payments"
+Set-FsrmFileGroup -Name "fisc_general_queries" -IncludePattern "*" -ExcludePattern @("*.csv", "*.docx","*.jpg","*.msg","*.pdf","*.png","*.tif","*.tmp","*.txt","*.xlsx","*.xml") -Description "fisc_general_queries"
+Set-FsrmFileGroup -Name "fisc_o2c" -IncludePattern "*" -ExcludePattern @("*.csv", "*.docx","*.jpg","*.msg","*.pdf","*.png","*.tif","*.tmp","*.txt","*.xlsx","*.xml") -Description "fisc_o2c"
+Set-FsrmFileGroup -Name "fisc_faa" -IncludePattern "*" -ExcludePattern @("*.csv", "*.docx","*.jpg","*.msg","*.pdf","*.png","*.tif","*.tmp","*.txt","*.xlsx","*.xml") -Description "fisc_faa"
+Set-FsrmFileGroup -Name "fisc_rtr" -IncludePattern "*" -ExcludePattern @("*.csv", "*.docx","*.jpg","*.msg","*.pdf","*.png","*.tif","*.tmp","*.txt","*.xlsx","*.xml") -Description "fisc_rtr"
+
+Set-FsrmFileGroup -Name "adm_property" -IncludePattern "*" -ExcludePattern @("*.docx","*.jpg","*.msg","*.pdf","*.pptx","*.xlsx") -Description "adm_property"
+Set-FsrmFileGroup -Name "adm_property" -IncludePattern "*" -ExcludePattern @("*.avi","*.docx","*.dwg","*.jpg","*.msg","*.pdf","*.png","*.pptx","*.tif","*.tmp","*.xlsm","*.xlsx","*.xps") -Description "adm_property"
+Set-FsrmFileGroup -Name "ehsc_ims" -IncludePattern "*" -ExcludePattern @("*.avi","*.mov","*.mp4","*.docx","*.dwg","*.jpg","*.msg","*.pdf","*.png","*.pptx","*.tif","*.tmp","*.xlsm","*.xlsx","*.xps") -Description "ehsc_ims"
+
+
+FILE SERVER SHARE CREATION - NEW
+--------------------------------
+1. Install w2019
+2. Join Domain
+3. Format FSRM file disk
+4. Format Data Storage file disk 
+5. Add file server Role + FSRM 
+6. Enable deduplication on FSRM file disk and Data Storage Disk 
+7. Create 3 Actice Directory file share group (r / rw / full) 
+8. Add groups to AD file share group 
+9. Create file share directory 
+10. Create fileshare (SMB) 
+11. Create FSRM rules for fileshare 
+12. Install client for backup (networker) 
+
+$dir = "E:\MRK\public"
+$grp_full = "VIONET\anm_mrk_public_full"
+$grp_rw = "VIONET\anm_mrk_public_rw"
+$grp_r = "VIONET\anm_mrk_public_r"
+$share = "mrk_public$"
+$fsrm = "mrk_public"
+
+New-Item -ItemType Directory $dir
+$acl = Get-ACL $dir
+$acl.SetAccessRuleProtection($true,$true)
+$AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("$grp_full","FullControl","ContainerInherit, ObjectInherit", "InheritOnly","Allow")
+$acl.SetAccessRule($AccessRule)
+$AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("$grp_r","Read","ContainerInherit, ObjectInherit", "InheritOnly","Allow")
+$acl.SetAccessRule($AccessRule)
+$AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("$grp_rw","DeleteSubdirectoriesAndFiles, Modify, Synchronize","ContainerInherit, ObjectInherit", "InheritOnly","Allow")
+$acl.SetAccessRule($AccessRule)
+$acl | Set-Acl  $dir
+Get-ACL  $dir | select * | fl 
+
+
+New-SmbShare -Name "$share" -Path $dir -FullAccess "VIONET\Domain Users" -Description "$share" -FolderEnumerationMode AccessBased
+
+New-FsrmFileGroup -Name "$fsrm" -IncludePattern "*" -ExcludePattern @("*.docx","*.jpg","*.msg","*.pdf","*.png","*.pptx","*.tmp","*.xlsm","*.xlsx") -Description "$fsrm"
+$Notification = New-FsrmAction -Type Email -MailTo "[Admin Email];[File Owner]" -Subject "Unauthorized file from the [Violated File Group] file group detected" -Body "User [Source Io Owner] attempted to save [Source File Path] to [File Screen Path] on the [Server] server. This file is in the [Violated File Group] file group, which is not permitted on the server." -RunLimitInterval 120
+New-FsrmFileScreenTemplate -Name "$fsrm" -Description "$fsrm" -Active -IncludeGroup "$fsrm" -Notification $Notification
+New-FsrmFileScreen -Path "$dir" -Template "$fsrm"
+
+Get-FsrmFileGroup  -name ehsc_ims | Select-Object ExcludePattern -ExpandProperty ExcludePattern	
+
+
+
+How to Setup NewServer
+----------------------
+powershell.exe
+Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\' -Name Shell -Value 'powershell.exe'
+
+-- find interface index 
+-- find interface name
+
+Set-Variable -Name "iface" -Value 5 (interface index)
+Set-Variable -Name "ad" -Value "Ethernet" (interface name)
+Set-Variable -Name "name" -Value fls5anmasp
+Set-Variable -Name "ipadd" -Value 10.15.18.55
+Set-Variable -Name "pre" -Value 24
+Set-Variable -Name "gw" -Value 10.15.18.1
+Set-Variable -Name "dns1" -Value 10.15.18.10
+Set-Variable -Name "dns2" -Value 10.1.21.13
+Set-Variable -Name "dns3" -Value 10.1.21.14
+Set-Variable -Name "tz" -Value "GTB Standard Time"
+Set-Variable -Name "adapt" -Value "eth0"
+Set-Variable -Name "grp1" -Value "VIONET\anm_it_grp_1"
+Set-Variable -Name "grp2" -Value "VIONET\anamet_grp_sccm"
+Set-Variable -Name "dom" -Value "corp.vionet.gr"
+
+
+New-NetIPaddress -InterfaceIndex 12 -IPAddress $ipaddress -PrefixLength $prefix -DefaultGateway $gateway
+Set-DNSClientServerAddress –InterfaceIndex $iface -ServerAddresses $dns1,$dns2,$dns3
+Set-TimeZone -Name $tz
+Rename-Computer -NewName $name -ComputerName .
+Rename-NetAdapter -InterfaceIndex $iface -NewName $adapt
+Disable-NetAdapterBinding -InterfaceAlias $adapt -ComponentId ms_tcpip6
+Restart-Computer -force
+
+add-computer –domainname $dom -Credential VIONET\distathopoulos -restart –force 
+Add-LocalGroupMemaber -Group Administrators $grp1
+Add-LocalGroupMember -Group Administrators $grp2
+
+$WUSettings = (New-Object -com "Microsoft.Update.AutoUpdate").Settings
+$WUSettings.NotificationLevel=2
+$WUSettings.save()
+
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+Install-Module PSWindowsUpdate
+Import-Module PSWindowsUpdate
+Get-WindowsUpdate
+Install-WindowsUpdate
+
+Get-HotFix
+
+$drive = gwmi win32_volume -Filter "DriveLetter = 'C:'"
+$drive.Label = "SYS"
+$drive.put()
+
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service sshd
+Set-Service -Name sshd -StartupType 'Automatic'
+Get-NetFirewallRule -Name *ssh*
+New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force
+
+DFS
+---
+Install-WindowsFeature -Name  FS-DFS-Namespace,FS-DFS-Replication
+Get-DfsnFolder -Path "\\corp.vionet.gr\ANM_GRP\IT\ANM\general"
+Get-DfsnFolderTarget -Path "\\corp.vionet.gr\ANM_GRP\IT\ANM\general"
+-IUp
+
+# Get-List of DFS Folders:
+Get-DfsnFolder -Path "\\corp.vionet.gr\ANM_GRP\*"
+
+#Get-DFSTarget Path:
+Get-DfsnFolderTarget -Path "\\corp.vionet.gr\ANM_GRP\EHSC\ANM\ims"
+
+# Create DFS Folder Target:
+New-DfsnFolder -Path "\\corp.vionet.gr\ANM_GRP\IT\ANM\test1\test2" -TargetPath "\\fls0anmasp\images$\" -EnableTargetFailback $True -Description "test"
+
+# Remove DFS Folder:
+Remove-DfsnFolder -Path "\\corp.vionet.gr\ANM_GRP\IT\ANM\test1\test2"
+
+#Remove-DfsFolder 
+Remove-DfsnFolderTarget -Path "\\corp.vionet.gr\ANM_GRP\IT\ANM\test1\test2" -TargetPath "\\fls0anmasp\images$\"
+
+
+# PRINT SERVER
+Install-WindowsFeature Print-Services
+Restart-Computer
+Intall PCL 6 HP Drivers 
+
+# Create Printer Port
+Add-PrinterPort -Name prnt20anmasp -PrinterHostAddress prnt20anmasp 
+
+Get-PrinterDriver
+# Create Printer
+Add-Printer -Name prnt20anmasp -DriverName "HP Universal Printing PCL 6" -PortName "prnt20anmasp" -Shared -Location "Ecoreset Scale" -Comment "Ecoreset Scale"
+
+# Set Print configuration
+$printconfig = Get-PrintConfiguration -PrinterName prnt18anmasp
+$printconfig.DuplexingMode = "TwoSidedLongEdge" { "TwoSidedShortEdge"  , "TwoSidedLongEdge" , "OneSided" }
+$printconfig.PaperSize = "A4" { A4 , A3 , Letter , .... }
+$printconfig.Collate = "true" { true / false }
+$printconfig.Color = "true" { true / false }
+Set-PrintConfiguration -InputObject $printconfig
+
+# Printer Properties
+Get-PrinterProperty -PrinterName prnt20anmasp
+Set-PrinterProperty -PrinterName prnt20anmasp -PropertyName "Config:PropertyName" -Value True
+
+Remove-NetIpAddress -InterfaceIndex 12
+Remove-NetRoute -InterfaceIndex 12
+
+Remove-NetIpAddress -InterfaceIndex 27
+Remove-NetRoute -InterfaceIndex 27
+
+
+Disconnect-VMNetworkAdapter -VMName * 
+remove-vswitch -Name vSwitch 
+Remove-NetLbfoTeam -Name Po10
+Remove-NetLbfoTeam -Name Po110
+
+Rename-NetAdapter -Name "eth0" -NewName "eth10"
+Rename-NetAdapter -Name "eth1" -NewName "eth11"
+
+Rename-NetAdapter -Name "management" -NewName "eth0"
+Rename-NetAdapter -Name "lacp1" -NewName "eth1"
+Rename-NetAdapter -Name "lacp2" -NewName "eth2"
+Rename-NetAdapter -Name "lacp3" -NewName "eth3"
+
+New-NetLbfoTeam -Name Po10 -TeamMembers "eth0","eth1","eth2","eth3" -TeamingMode LACP -LoadBalancingAlgorithm HyperVPort
+New-NetLbfoTeam -Name Po110 -TeamMembers "eth10","eth11" -TeamingMode LACP -LoadBalancingAlgorithm HyperVPort
+
+New-VMSwitch -name vSwitch  -MinimumBandwidthMode Weight  -NetAdapterName Po110 -AllowManagementOS $true
+
+Add-VMNetworkAdapter -ManagementOS -SwitchName vSwitch -Name server 
+Add-VMNetworkAdapter -ManagementOS -SwitchName vSwitch -Name motion 
+Add-VMNetworkAdapter -ManagementOS -SwitchName vSwitch -Name cluster
+
+Set-VMNetworkAdapter -ManagementOS -Name server -MinimumBandwidthWeight 10
+Set-VMNetworkAdapter -ManagementOS -Name cluster -MinimumBandwidthWeight 10
+Set-VMNetworkAdapter -ManagementOS -Name motion -MinimumBandwidthWeight 10
+
+Disable-NetAdapterBinding -InterfaceAlias "eth0" -COmponentId ms_tcpip
+Disable-NetAdapterBinding -InterfaceAlias "eth1" -COmponentId ms_tcpip
+Disable-NetAdapterBinding -InterfaceAlias "eth2" -COmponentId ms_tcpip
+Disable-NetAdapterBinding -InterfaceAlias "eth3" -COmponentId ms_tcpip
+Disable-NetAdapterBinding -InterfaceAlias "eth10" -COmponentId ms_tcpip
+Disable-NetAdapterBinding -InterfaceAlias "eth11" -COmponentId ms_tcpip
+Disable-NetAdapterBinding -InterfaceAlias "Po112" -COmponentId ms_tcpip
+Disable-NetAdapterBinding -InterfaceAlias "Po12" -COmponentId ms_tcpip
+Disable-NetAdapterBinding -InterfaceAlias "server" -COmponentId ms_tcpip
+Disable-NetAdapterBinding -InterfaceAlias "motion" -COmponentId ms_tcpip
+Disable-NetAdapterBinding -InterfaceAlias "cluster" -COmponentId ms_tcpip
+Disable-NetAdapterBinding -InterfaceAlias "vSwitch" -COmponentId ms_tcpip
+
+Set-VMNetworkAdaptervlan -ManagementOS -VMNetworkAdapterName vSwitch -Trunk -AllowedVlanIdList "96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111" -NativeVlanId 666
+
+Get-VMNetworkAdapter -ManagementOS -Name server | Set-VMNetworkAdapterVlan -Access -VlanID 111
+Get-VMNetworkAdapter -ManagementOS -Name cluster | Set-VMNetworkAdapterVlan -Access -VlanID 110
+Get-VMNetworkAdapter -ManagementOS -Name motion | Set-VMNetworkAdapterVlan -Access -VlanID 108
+Get-VMNetworkAdapter -ManagementOS -Name storage1 | Set-VMNetworkAdapterVlan -Access -VlanID 109
+Get-VMNetworkAdapter -ManagementOS -Name storage2 | Set-VMNetworkAdapterVlan -Access -VlanID 109
+
+New-NetIPAddress -InterfaceAlias server -IPAddress 10.15.27.2 -PrefixLength 24 -DefaultGateway 10.15.27.1
+Set-DnsClientServerAddress -InterfaceAlias server -ServerAddresses 10.15.18.10,10.1.21.13,10.1.21.14
+
+New-NetIPAddress -InterfaceAlias cluster -IPAddress 10.15.26.2 -PrefixLength 24
+New-NetIPAddress -InterfaceAlias motion -IPAddress 10.15.24.2 -PrefixLength 24
+
+Connect-VMNetworkAdapter -VMName * -SwitchName vSwitch
+
+Test-NetConnection -ComputerName "10.1.21.14" -ConstrainInterface 5 -DiagnoseRouting -InformationLevel "Detailed"
+
+# CONFIGURE PAGEFILE
+$computer = Get-WmiObject Win32_computersystem -EnableAllPrivileges
+$computer.AutomaticManagedPagefile = $false
+$computer.Put()
+$CurrentPageFile = Get-WmiObject -Query "select * from Win32_PageFileSetting where name='c:\\pagefile.sys'"
+$CurrentPageFile.delete()
+Set-WMIInstance -Class Win32_PageFileSetting -Arguments @{name="d:\pagefile.sys";InitialSize = 2048; MaximumSize = 32768}
+
+
+
+
+
+
+
+
+
+
+# CLUSTER CONFIGURATION
+# Network
+
+New-NetLbfoTeam -Name xxx -TeamMembers "lacp1","lacp2","lacp3" -TeamingMode LACP -LoadBalancingAlgorithm HyperVPort
+Set-NetAdapterAdvancedProperty -Name xxx -RegistryKeyword '*JumboPacket' -RegistryValue '9014'
+
+# Disable Flow Controll on physical Nics
+Set-NetAdapterAdvancedProperty -Name xxx -RegistryKeyword "*FlowControl" -RegistryValue 0
+
+#New-VMSwitch “ConvergedNetSwitch” -MinimumBandwidthMode weight -NetAdapterName “ConvergedNetTeam” -AllowManagementOS 0
+#New-VMSwitch “vSwitch” -MinimumBandwidthMode Weight -NetAdapterTeam “TeamTest” -AllowManagementOS 0 
+
+New-VMSwitch -name vSwitch  -MinimumBandwidthMode Weight  -NetAdapterName P110 -AllowManagementOS $true
+Set-VMSwitch vSwitch -DefaultFlowMinimumBandwidthWeight 10
+
+Add-VMNetworkAdapter -ManagementOS -SwitchName vSwitch -Name server 
+Add-VMNetworkAdapter -ManagementOS -SwitchName vSwitch -Name motion 
+Add-VMNetworkAdapter -ManagementOS -SwitchName vSwitch -Name cluster
+Add-VMNetworkAdapter -ManagementOS -Name storage1 -SwitchName vSwitch
+Add-VMNetworkAdapter -ManagementOS -Name storage2 -SwitchName vSwitch
+
+Set-VMNetworkAdapter -ManagementOS -Name server -MinimumBandwidthWeight 10
+Set-VMNetworkAdapter -ManagementOS -Name cluster -MinimumBandwidthWeight 10
+Set-VMNetworkAdapter -ManagementOS -Name motion -MinimumBandwidthWeight 10
+Set-VMNetworkAdapter -ManagementOS -Name storage1 -MinimumBandwidthWeight 10
+Set-VMNetworkAdapter -ManagementOS -Name storage2 -MinimumBandwidthWeight 15
+get-
+Get-VMNetworkAdapter -ManagementOS -Name server | Set-VMNetworkAdapterVlan -Access -VlanID 111
+Get-VMNetworkAdapter -ManagementOS -Name cluster | Set-VMNetworkAdapterVlan -Access -VlanID 110
+Get-VMNetworkAdapter -ManagementOS -Name motion | Set-VMNetworkAdapterVlan -Access -VlanID 108
+Get-VMNetworkAdapter -ManagementOS -Name storage1 | Set-VMNetworkAdapterVlan -Access -VlanID 109
+Get-VMNetworkAdapter -ManagementOS -Name storage2 | Set-VMNetworkAdapterVlan -Access -VlanID 109
+
+New-NetIPAddress -InterfaceAlias server -IPAddress 10.15.27.2 -PrefixLength 24 -DefaultGateway 10.15.27.1
+Set-DnsClientServerAddress -InterfaceAlias server -ServerAddresses 10.15.18.10,10.1.21.13,10.1.21.14
+
+New-NetIPAddress -InterfaceAlias cluster -IPAddress 10.15.26.2 -PrefixLength 24
+New-NetIPAddress -InterfaceAlias motion -IPAddress 10.15.24.2 -PrefixLength 24
+
+Get-NetAdapterAdvancedProperty -Name 
+
+--Enable RDMA on motion/storage VLAN 
+Enable-NetAdapterRdma -Name motion
+Enable-NetAdapterRdma -Name storage1
+Enable-NetAdapterRdma -Name storage2
+Get-SmbClientNetworkInterface | where RdmaCapable -EQ $true | ft FriendlyName
+
+-- Enable QoS -- PFC on Server
+# Turn on DCB
+Add-WindowsFeature Data-Center-Bridging
+# Set a policy for SMB-Direct & Cluster
+New-NetQosPolicy "SMB" -NetDirectPortMatchCondition 445 -PriorityValue8021Action 3
+New-NetQosPolicy "Cluster" -PriorityValue8021Action 5
+# Turn on Flow Control for SMB
+Enable-NetQosFlowControl -Priority 3,5
+# Make sure flow control is off for other traffic
+Disable-NetQosFlowControl -Priority 0,1,2,4,6,7
+#Disable DCBx
+Set-NetQosDcbxSetting -Willing $false -Confirm:$false
+# Apply a Quality of Service (QoS) policy to the target adapters
+Enable-NetAdapterQos -InterfaceAlias xxx
+# Give SMB Direct 50% of the bandwidth minimum & 1% of the bandwidth in Cluster
+New-NetQosTrafficClass "SMB" -Priority 3 -BandwidthPercentage 50 -Algorithm ETS
+New-NetQosTrafficClass "Cluster" -Priority 5 -BandwidthPercentage 1 -Algorithm ETS
+
+
+
+Get-VMHostNumaNode
+Get-NetAdapterRss (Receive Side Scaling (RSS))
+
+Set-NetAdapterAdvancedProperty -Name "NIC1" -RegistryKeyword '*NumaNodeId' -RegistryValue '0'
+Set-NetAdapterAdvancedProperty -Name "NIC2" -RegistryKeyword '*NumaNodeId' -RegistryValue '1'
+Set-NetAdapterRss -Name NIC1 -BaseProcessorNumber 1 -NumaNode 0
+Set-NetAdapterRss -Name NIC2 -BaseProcessorNumber 1 -NumaNode 1
+Set-NetAdapterRss -Name "vEthernet (SMB1)" -BaseProcessorNumber 1 -NumaNode 0
+Set-NetAdapterRss -Name "vEthernet (SMB2)" -BaseProcessorNumber 1 -NumaNode 1
+Set-NetAdapterRss -Name NIC1 -NumaNode 0 -BaseProcessorNumber 1 -MaxProcessorNumber 6
+Set-NetAdapterRss -Name NIC1 -NumaNode 0 -BaseProcessorNumber 8 -MaxProcessors 4
+
+Set-VMNetworkAdapter "VM Name" -VMMQEnabled $True
+Set-VMNetworkAdapter "SMB1" -ManagementOS -VMMQEnabled $True
+
+-- affinitize a vNIC to a pNIC 
+Set-VMNetworkAdapterTeamMapping -VMNetworkAdapterName SMB1 –ManagementOS –PhysicalNetAdapterName NIC1
+Set-VMNetworkAdapterTeamMapping -VMNetworkAdapterName SMB2 –ManagementOS –PhysicalNetAdapterName NIC
+
+-- PFC on 2 Nexus -- Missing QoS for Cluster
+-- dcswtch1anmasp
+configure terminal 
+interface Po110
+priority-flow-control mode on 
+ 
+dcswtch1anmasp(config)# class-map type qos c1
+dcswtch1anmasp(config-cmap-qos)# match cos 3
+dcswtch1anmasp(config-cmap-qos)# exit
+ 
+dcswtch1anmasp(config)# policy-map type qos p1
+dcswtch1anmasp(config-pmap-qos)# class type qos c1
+dcswtch1anmasp(config-pmap-c-qos)# set qos-group 3
+dcswtch1anmasp(config-pmap-c-qos)# exit
+dcswtch1anmasp(config-pmap-qos)# exit
+ 
+dcswtch1anmasp(config)# class-map type network-qos match-any c1
+dcswtch1anmasp(config-cmap-nqos)# match qos-group 3
+dcswtch1anmasp(config-cmap-nqos)# exit
+ 
+dcswtch1anmasp(config)# policy-map type network-qos p1
+dcswtch1anmasp(config-pmap-nqos)# class type network-qos c-nq1
+dcswtch1anmasp(config-pmap-nqos-c)# pause buffer-size 20000 pause-threshold 100 resume-threshold 1000 pfc-cos 3
+dcswtch1anmasp(config-pmap-nqos-c)# exit
+dcswtch1anmasp(config-pmap-nqos)# exit
+dcswtch1anmasp(config)# system qos
+dcswtch1anmasp(config-sys-qos)# service-policy type network-qos p1
+exit
+
+-- dcswtch2anmasp
+configure terminal 
+interface Po110
+priority-flow-control mode on 
+ 
+dcswtch2anmasp(config)# class-map type qos c1
+dcswtch2anmasp(config-cmap-qos)# match cos 3
+dcswtch2anmasp(config-cmap-qos)# exit
+ 
+dcswtch2anmasp(config)# policy-map type qos p1
+dcswtch2anmasp(config-pmap-qos)# class type qos c1
+dcswtch2anmasp(config-pmap-c-qos)# set qos-group 3
+dcswtch2anmasp(config-pmap-c-qos)# exit
+dcswtch2anmasp(config-pmap-qos)# exit
+ 
+dcswtch2anmasp(config)# class-map type network-qos match-any c1
+dcswtch2anmasp(config-cmap-nqos)# match qos-group 3
+dcswtch2anmasp(config-cmap-nqos)# exit
+ 
+dcswtch2anmasp(config)# policy-map type network-qos p1
+dcswtch2anmasp(config-pmap-nqos)# class type network-qos c-nq1
+dcswtch2anmasp(config-pmap-nqos-c)# pause buffer-size 20000 pause-threshold 100 resume-threshold 1000 pfc-cos 3
+dcswtch2anmasp(config-pmap-nqos-c)# exit
+dcswtch2anmasp(config-pmap-nqos)# exit
+dcswtch2anmasp(config)# system qos
+dcswtch2anmasp(config-sys-qos)# service-policy type network-qos p1
+
+
+-- dcswtch3anmasp
+configure terminal 
+interface Po110
+priority-flow-control mode on 
+ 
+dcswtch2anmasp(config)# class-map type qos c1
+dcswtch2anmasp(config-cmap-qos)# match cos 3
+dcswtch2anmasp(config-cmap-qos)# exit
+ 
+dcswtch2anmasp(config)# policy-map type qos p1
+dcswtch2anmasp(config-pmap-qos)# class type qos c1
+dcswtch2anmasp(config-pmap-c-qos)# set qos-group 3
+dcswtch2anmasp(config-pmap-c-qos)# exit
+dcswtch2anmasp(config-pmap-qos)# exit
+ 
+dcswtch2anmasp(config)# class-map type network-qos match-any c1
+dcswtch2anmasp(config-cmap-nqos)# match qos-group 3
+dcswtch2anmasp(config-cmap-nqos)# exit
+ 
+dcswtch2anmasp(config)# policy-map type network-qos p1
+dcswtch2anmasp(config-pmap-nqos)# class type network-qos c-nq1
+dcswtch2anmasp(config-pmap-nqos-c)# pause buffer-size 20000 pause-threshold 100 resume-threshold 1000 pfc-cos 3
+dcswtch2anmasp(config-pmap-nqos-c)# exit
+dcswtch2anmasp(config-pmap-nqos)# exit
+dcswtch2anmasp(config)# system qos
+dcswtch2anmasp(config-sys-qos)# service-policy type network-qos p1
+
+
+
+
+
+
+
+
+
+
+# Get 
+get-StartApps
+
+get-StartApps | Where-Object {$_.Name -like '*Edge*' }
+
+# Get SID for account in Domain 
+[wmi] "win32_userAccount.Domain='VIONET',Name='anm_kiosk_srv'"
+
+# Get-Processes (task manager) 
+get-processes
+Get-Process winword, explorer | Format-List *
+Get-Process winword -FileVersionInfo
+
+# Services Management
+get-service 
+start-service 
+stop-service nsrnmmra
+stop-service nsrexecd
+
+
+
+# Restart 
+restart-service nsrexecd
+restart-service nsrnmmra
+
+# System information
+sysinfo 
+
+# Find programs installed
+Get-WmiObject -Class Win32_Product 
+
+# Uninstall a program 
+$app = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -match "Software Name" }
+$app.Uninstall()
+
+# 1. Uninstall NetWorker Module for Microsoft
+$app = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -match "NetWorker Module for Microsoft" }
+$app.Uninstall()
+
+# 2. Uninstall NetWorker
+$app = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -match "NetWorker" }
+$app.Uninstall()
+
+# 3. Uninstall ItemPoint
+$app = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -match "Dell EMC ItemPoint 8.3" }
+$app.Uninstall()
+
+# 4. Uninstall Config Checker
+$app = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -match "Config Checker" }
+$app.Uninstall()
+
+# 5. Remove tmp file of client
+Remove-Item -Recurse "C:\Program Files\EMC NetWorker\nsr\tmp"
+
+# 1. Install nw1911_win_x64 - lgtoclnt-19.1.1.0.exe (normal client)
+.\lgtoclnt-19.1.1.0.exe    - normal client
+.\lgtoxtdclnt-19.1.1.0.exe - extentended client
+.\NetWorker-19.1.1.0.exe   - networker server + storage node
+
+# 2. Install NWVSS.exe 
+NWVSS Proxy Recovery Agent.exe - restore Hyper-V from GUI
+NWVSS.exe                      - recovery agent - binaries for Microsoft Apps Module
+No options for Hyper-V options
+No options for mssql 
+
+
+
+
+
+
+# Windows Admin Center
+msiexec /i WindowsAdminCenter1910.msi /qn /L*v log.txt SME_PORT=443 CERTIFICATE_OPTION=generate RESTART_WINRM=0
+
+
+
+
+
+#Hyper-V Network Configuration (Cluster)
+
+
+
+
+
+
+
+
+
+
+
+
+# ACTIVE DIRECTORY
+
+# Find OS
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Anamet_Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Anamet_Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Cablel Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Cablel Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=CPW,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=CPW,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Elval Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Elval Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Etem Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Etem Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Halcor Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Halcor Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=ICME,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=ICME,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Sidenor Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Sidenor Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Sidma Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Sidma Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=StarLitho,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=StarLitho,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Teka Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Teka Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Infastructure,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate > file.txt
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Infastructure,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate >> file.txt
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Steelmet Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate >> file.txt
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Steelmet Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate >> file.txt
+
+
+Get-ADComputer -Identity "v-tvalalas" | Remove-ADObject -Recursive -Confirm:$False
+
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Infastructure,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate 
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Infastructure,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate 
+Get-ADComputer -Filter {(Enabled -eq $True) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Steelmet Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate 
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*2000*") -or (OperatingSystem -Like "*Windows*2003*") -or (OperatingSystem -Like "*Windows*XP*") ) } -SearchBase "OU=Steelmet Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate 
+
+
+
+Get-ADComputer -Filter * -SearchBase "OU=Infastructure,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate 
+Get-ADComputer -Filter * -SearchBase "OU=Steelmet Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate 
+
+
+Get-ADComputer -Filter {(Enabled -eq $False) -and ((OperatingSystem -Like "*Windows*8.1*") -or (OperatingSystem -Like "*Windows*8*") ) } -SearchBase "OU=Vionet,DC=corp,DC=vionet,DC=gr" -Properties lastlogondate,operatingsystem | select name,operatingsystem,lastlogondate | sort lastlogondate
+
+
+# Find User's last logondate 
+Get-ADUser -Filter * -SearchBase "OU=Anamet_Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -ResultPageSize 0 -Prop CN,lastLogonTimestamp | Select samAccountName,CN,@{n="lastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp)}} | sort lastlogondate
+Get-ADUser -Filter * -SearchBase "OU=Cablel Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -ResultPageSize 0 -Prop CN,lastLogonTimestamp | Select samAccountName,CN,@{n="lastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp)}} | sort lastlogondate
+Get-ADUser -Filter * -SearchBase "OU=CPW,OU=Vionet,DC=corp,DC=vionet,DC=gr" -ResultPageSize 0 -Prop CN,lastLogonTimestamp | Select samAccountName,CN,@{n="lastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp)}} | sort lastlogondate
+Get-ADUser -Filter * -SearchBase "OU=Anamet_Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" -ResultPageSize 0 -Prop CN,lastLogonTimestamp | Select samAccountName,CN,@{n="lastLogonDate";e={[datetime]::FromFileTime($_.lastLogonTimestamp)}} | sort lastlogondate
+
+# Find Group members in AD
+Get-ADGroupMember -Identity "VPN Users Full Access" -Recursive | Select name,distinguishedName | sort distinguishedName | select 
+
+Get-ADObject (Get-ADRootDSE).schemaNamingContext -Property objectVersion
+Get-ADForest
+Get-ADDomain
+
+# UPGADE DOMAIN FUNCTIONAL LEVEL 
+$pdc = Get-ADDomainController -Discover -Service PrimaryDC
+Set-ADDomainMode -Identity $pdc.Domain -Server $pdc.HostName[0] -DomainMode Windows2012R2Domain
+
+# UPGRADE FOREST FUNCTIONAL LEVEL
+$Forest = Get-ADForest
+Set-ADForestMode -Identity $Forest -Server $Forest.SchemaMaster -ForestMode Windows2008R2Forest
+
+#  export users 
+$OUpath = "OU=General,OU=Users,OU=Elval,OU=Office,OU=Elval Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr"
+$ExportPath = "c:\Users\distathopoulosadmin\Desktop\users1.csv"
+Get-ADUser -Filter * -SearchBase $OUpath | Select-object samAccountName| Export-Csv -NoType $ExportPath
+
+# DNS
+Get-DnsServerResourceRecord -ZoneName "vionet.gr" | Select HostName,RecordType,Timestamp,RecordData | sort Timestamp
+
+
+# CHANGE POWERSHELL
+
+New-ADOrganizationalUnit -Name "UserAccounts" -Path "DC=FABRIKAM,DC=COM"
+
+
+
+
+# Disable VPN Microsoft dialin 
+set-aduser <username> -replace @{msnpallowdialin=$false}
+
+
+
+
+
+# Find locked users
+Search-ADAccount -lockedout
+
+# Find Locked username
+Get-ADUser -Identity "distathopoulos" -Properties LockedOut,DisplayName | Select-Object samaccountName, displayName,Lockedout
+
+# Unlock username 
+Get-ADUser -Identity "distathopoulos" | Unlock-ADAccount
+
+# Find locked username time 
+Get-ADUser jsmith -Properties Name, lastLogonTimestamp,lockoutTime,logonCount,pwdLastSet | Select-Object Name,@{n='LastLogon';e={[DateTime]::FromFileTime($_.lastLogonTimestamp)}},@{n='lockoutTime';e={[DateTime]::FromFileTime($_.lockoutTime)}},@{n='pwdLastSet';e={[DateTime]::FromFileTime($_.pwdLastSet)}},logonCount
+
+# Find PDC Emulator
+(Get-AdDomain).PDCEmulator
+
+# Find computer from which user was locked:
+$Usr = "distathopoulos"
+$Pdc = (Get-AdDomain).PDCEmulator
+$ParamsEvn = @{
+'Computername' = $Pdc
+'LogName' = 'Security'
+'FilterXPath' = "*[System[EventID=4740] and EventData[Data[@Name='TargetUserName']='$Usr']]"
+}
+$Evnts = Get-WinEvent @ParamsEvn
+$Evnts | foreach {$_.Properties[1].value + ' ' + $_.TimeCreated}
+
+# Query all DCs for username where user was locked
+$Usr = 'distathopoulos'
+Get-ADDomainController -fi * | select -exp hostname | % {
+$ParamsEvn = @{
+'Computername' = $Pdc
+'LogName' = 'Security'
+'FilterXPath' = "*[System[EventID=4740] and EventData[Data[@Name='TargetUserName']='$Usr']]"
+}
+$Evnts = Get-WinEvent @ParamsEvn
+$Evnts | foreach {$_.Computer + " " +$_.Properties[1].value + ' ' + $_.TimeCreated}
+}
+
+
+
+# Set Attributes to users 
+$users = Get-ADUser -Filter * -properties SID,Surname,GivenName,mail,company | where -Property company -like "Elval Automotive"
+$users = Get-ADUser -Filter * -properties SID,Surname,GivenName,mail,company | where -Property company -eq "SofiaMed"
+foreach ($user in $users) {  SET-ADUSER $user -replace @{company="ELVAL"} }
+
+# Set Attributes to users under specific OU
+$OUpath = 'ou=Anamet_Adm,ou=VIONET,dc=corp,dc=vionet,dc=gr'
+$users = Get-ADUser -Filter * -SearchBase $OUpath -properties SID,Surname,GivenName,mail,company,msnpallowdialin 
+foreach ($user in $users) {  SET-ADUSER $user -replace @{company="ELVAL"} }
+
+# $users = Get-ADUser -Filter * -SearchBase $OUpath -Properties * | select *
+# Find empty attribute and fill it in 
+$OUpath = 'ou=VIONET,dc=corp,dc=vionet,dc=gr'
+$users = Get-ADUser -Filter * -SearchBase $OUpath -properties * | select SID,Surname,GivenName,mail,company,msNPAllowDialin
+foreach ($user in $users) {  $comp=$user.company; if (!$comp) { Write-Host "Empty company for $user"; Set-ADUser $user -replace @{company="AEIFOROS"}  } }
+$i=0
+foreach ($user in $users) {  $comp=$user.company; if (!$comp) { $i=$i+1; } }
+Write-Host "counted: $i"
+
+# VPN
+$OUpath = 'ou=Steelmet Adm,ou=VIONET,dc=corp,dc=vionet,dc=gr'
+$users = Get-ADUser -Filter * -SearchBase $OUpath -properties * | select SID,Surname,GivenName,mail,company,msNPAllowDialin,adminDisplayName
+$i=0
+foreach ($user in $users) {  $vpn=$user.msNPAllowDialin; if ($vpn -eq "True") { $i=$i+1; } }
+Write-Host "counted: $i"
+
+#foreach ($user in $users) {  $vpn=$user.msNPAllowDialin; if ($vpn -eq "True") { SET-ADUSER $user.SID -clear msNPAllowDialin } } 
+
+# Admin Display Name
+$OUpath = 'dc=corp,dc=vionet,dc=gr'
+$users = Get-ADUser -Filter * -SearchBase $OUpath -properties * | select SID,Surname,GivenName,mail,company,msNPAllowDialin,adminDisplayName
+foreach ($user in $users) {  $adn=$user.adminDisplayName; if (!$adn) { Set-ADUser $user.SID -replace @{adminDisplayName="STEELMET IT"} } }
+$users = ""
+
+
+# Set Supporting IT for AD Users
+$OUpath = 'ou=Steelmet Adm,ou=VIONET,dc=corp,dc=vionet,dc=gr'
+$users = Get-ADUser -Filter * -SearchBase $OUpath -properties * | select SID,Surname,GivenName,mail,company,msNPAllowDialin,adminDisplayName
+foreach ($user in $users) {  $adn=$user.company; if ($adn -eq "VIENER") { Set-ADUser $user.SID -replace @{adminDisplayName="STEELMET IT" } } }
+
+
+$OUpath = 'dc=corp,dc=vionet,dc=gr'
+$users = Get-ADUser -Filter * -SearchBase $OUpath -properties * | select SID,Surname,GivenName,mail,company,msNPAllowDialin,adminDisplayName,department
+foreach ($user in $users) {  $adn=$user.department; if ($adn -eq "IT") { $user } }
+foreach ($user in $users) {  $adn=$user.department; if ($adn -eq "IT") { Set-ADUser $user.SID -replace @{department="Information Technology Dpt" } } }
+
+# Set Supporting IT for AD Contacts
+$OUpath = 'ou=Cablel Adm,ou=VIONET,dc=corp,dc=vionet,dc=gr'
+$users = Get-ADObject -Filter 'objectClass -eq "contact"' -SearchBase $OUpath -properties * | select name,adminDisplayName,canonicalName,distinguishedName,extensionAttribute15,department
+foreach ($user in $users) {  $adn=$user.extensionAttribute15; if (!$adn) { Set-ADObject $user.distinguishedName -replace @{adminDisplayName="STEELMET IT" } } } 
+$users = ""
+
+# Extension Attribute 15
+$OUpath = 'ou=Metal Agencies,ou=Steelmet Adm,ou=Vionet,dc=corp,dc=vionet,dc=gr'
+$users = Get-ADUser -Filter '*' -SearchBase $OUpath -properties * | select SID,name,adminDisplayName,canonicalName,distinguishedName,extensionAttribute15
+foreach ($user in $users) {  $adn=$user.extensionAttribute15; if (!$adn) { Set-ADUser $user.SID -replace @{extensionAttribute15="real" }  } }
+
+foreach ($user in $users) {  $adn=$user.extensionAttribute15;  Set-ADUser $user.SID -replace @{extensionAttribute15="real" }  } 
+
+
+$OUpath = 'ou=.Sap Service Accounts,ou=CORP SAP SERVERS,ou=Vionet,dc=corp,dc=vionet,dc=gr'
+$users = Get-ADUser -Filter '*' -SearchBase $OUpath -properties * | select SID,name,adminDisplayName,canonicalName,distinguishedName,extensionAttribute15
+foreach ($user in $users) {  $adn=$user.extensionAttribute15; if (!$adn) { Set-ADUser $user.SID -replace @{extensionAttribute15="service" } } }
+
+
+# GET USERS WITH ATTRIBUTES
+$users = Get-ADUSer -filter {msNPAllowDialin -eq 'TRUE' -AND (adminDisplayName -eq 'ICME IT')} -Properties * | select name,Surname,GivenName,mail,SID,company,msNPAllowDialin 
+
+Set-ADUser -Identity  cblactrl -Add @{extensionAttribute15 = 'service'} 
+
+
+
+
+$OUpath = 'ou=.Adminstrators,ou=Infastructure,dc=corp,dc=vionet,dc=gr'
+$users = Get-ADUser -Filter '*' -SearchBase $OUpath -properties * | select SID,name,adminDisplayName,canonicalName,distinguishedName,extensionAttribute15
+foreach ($user in $users) {  $adn=$user.extensionAttribute15; Set-ADUser $user.SID -replace @{extensionAttribute15="real"  } }
+
+
+
+$OUpath = 'dc=corp,dc=vionet,dc=gr'
+$users = Get-ADObject -Filter 'objectClass -eq "contact"' -SearchBase $OUpath -properties * | select name,adminDisplayName,canonicalName,distinguishedName,extensionAttribute15
+foreach ($user in $users) {  $adn=$user.extensionAttribute15; if (!$adn) { Set-ADObject $user.distinguishedName -replace @{extensionAttribute15="contact" } } } 
+$users = ""
+
+# Find Primary SMTP addresses - 
+
+
+# UPN Suffix 
+#Add UPN
+$UPNSuffix = ""
+Get-ADForest | Set-ADForest -UPNSuffixes @{add="alitajran.com"}
+
+Get-ADUser -Filter {UserPrincipalName -like "*@sidenor.vionet.gr"}
+
+# Get all UPNs 
+Get-adforest | select UPNSuffixes -ExpandProperty UPNSuffixes | sort
+
+
+# FIND USERS WITH SPECIFIC ATTRIBUTE VALUE
+$itUsers = @()
+$persons = @()
+$OUpath = 'dc=corp,dc=vionet,dc=gr'
+$users = Get-ADUser -Filter "enabled -eq'true'" -SearchBase $OUpath -properties * | select SID,Surname,GivenName,mail,company,msNPAllowDialin,adminDisplayName,department,telephoneNumber,mobile,extensionAttribute15,sAMAccountName,distinguishedName
+foreach ($user in $users) {  $adn=$user.extensionAttribute15; if ($adn -eq "physical") { $persons += $user } }
+foreach ($it in $persons) { $dept = $it.department; if ($dept -eq "Information Technology Dpt") { $itUsers += $it } }
+
+$depts = @()
+foreach ($user in $users) {  $adn=$user.department;  $depts += $adn  }
+
+
+
+
+
+# COMPUTERS
+$OUpath = 'ou=Anamet_Adm,ou=Vionet,dc=corp,dc=vionet,dc=gr'
+$computers = Get-ADComputer -Filter 'operatingsystem -like "Windows 10*" -and enabled -eq "true"' -SearchBase $OUpath -Properties Name,Operatingsystem,OperatingSystemVersion,IPv4Address
+
+
+
+
+
+# TEAMS GROUP in OUTLOOK
+Install-Module -Name ExchangeOnlineShell -Repository PSGallery
+$UserCredential = Get-Credential
+$Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential $UserCredential -Authentication Basic -AllowRedirection
+Import-PSSession $Session -DisableNameChecking
+Set-UnifiedGroup -Identity "IT_Departments_dc025231-bb7a-418b-835e-7ed8d63a5281" -HiddenFromExchangeClientsEnabled:$false
+
+
+
+
+
+
+
+
+
+
+# Azure
+# Preparation
+Install-Module -Name MSOnline
+Install-Module AzureADPreview -Force -AllowClobber
+Get-Module AzureADPreview -ListAvailable
+Uninstall-Module -Name AzureADPreview
+
+#connection
+Connect-AzureAD
+
+# GROUPS
+# List all available
+Get-AzureADMSGroup -All:$True
+# List all dynamic available
+Get-AzureADMSGroup -All:$True | Where {($_.GroupTypes -eq 'DynamicMembership')} | sort DisplayName
+# Filter with name equals
+Get-AzureADGroup -Filter "DisplayName eq 'Intune Administrators'"
+# Filter with name like 
+Get-AzureADMSGroup -All:$True | Where {($_.GroupTypes -eq 'DynamicMembership')} | Where {($_.DisplayName -Like "All Users of *")} | Remove-AzureADMSGroup
+# Filter with name and remove 
+Get-AzureADMSGroup -All:$True | Where {($_.GroupTypes -eq 'DynamicMembership')} | Where {($_.DisplayName -Like "All Autopilot Devices of *")} | Remove-AzureADMSGroup
+
+#USERS
+# Find users based on CompanyName attribute
+Get-AzureADUser -All:$True |  Where-Object {$_.CompanyName -eq "Etem GR"}
+
+
+
+#Inbound rule firewall for Windows Server
+new-netfirewallrule -DisplayName "sshd" -Direction Inbound -Protocol TCP -LocalPort 22 -Action Allow
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# MS EXCHANGE
+add-pssnapin Microsoft.Exchange.Management.PowerShell.E2010
+
+Get-MailboxStatistics [username] | ft DisplayName, TotalItemSize, ItemCount
+
+Get-MailboxDatabase "<insert database name or don’t enter one for all DB’s>" | Get-MailboxStatistics | Sort totalitemsize -desc | ft displayname, totalitemsize, itemcount >> C:\*name_of_file*.txt
+
+
+
+
+# WINDOWS DEFENDER
+Get-MpComputerStatus
+
+
+
+
+Get-Module AzureADpreview-ListAvailable
+
+# O365
+# Connect to Azure AD
+Install-Module -Name AzureAD
+Connect-AzureAD
+# ACTIVATE TEAMS LICENSE 
+$userUPN="akanavos@corp.vionet.gr";
+$userLoc="GR";
+Set-AzureADUser -ObjectID $userUPN -UsageLocation $userLoc;
+$planName="TEAMS_COMMERCIAL_TRIAL";
+$License = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicense;
+$License.SkuId = (Get-AzureADSubscribedSku | Where-Object -Property SkuPartNumber -Value $planName -EQ).SkuID;
+$LicensesToAssign = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicenses;
+$LicensesToAssign.AddLicenses = $License;
+Set-AzureADUserLicense -ObjectId $userUPN -AssignedLicenses $LicensesToAssign;
+
+# REMOVE TEAMS COMMERCIAL LICENSE
+$userUPN="distathopoulos@corp.vionet.gr"
+$planName="TEAMS_COMMERCIAL_TRIAL"
+$license = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicense
+$licenses = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicenses
+$license.SkuId = (Get-AzureADSubscribedSku | Where-Object -Property SkuPartNumber -Value $planName -EQ).SkuID
+$licenses.AddLicenses = $license
+Set-AzureADUserLicense -ObjectId $userUPN -AssignedLicenses $licenses
+$Licenses.AddLicenses = @()
+$Licenses.RemoveLicenses =  (Get-AzureADSubscribedSku | Where-Object -Property SkuPartNumber -Value $planName -EQ).SkuID
+Set-AzureADUserLicense -ObjectId $userUPN -AssignedLicenses $licenses
+
+# Get users activated for product X
+# Get-MsolUser -MaxResults 200000 | Where-Object {($_.licenses).AccountSkuId -match "TEAMS_COMMERCIAL_TRIAL"} | export-csv c:\Users\distathopoulos\Desktop\file.csv
+
+Get-MsolUser -MaxResults 200000 | Where-Object {($_.licenses).AccountSkuId -match "SPE_E3"} | export-csv c:\Users\distathopoulos\Desktop\file2.csv
+
+$product = "TEAMS_COMMERCIAL_TRIAL"
+Get-MsolUser -MaxResults 200000 | Where-Object {($_.licenses).AccountSkuId -match $product} | export-csv c:\Users\distathopoulos\Desktop\file.csv
+
+$data=Import-Csv -Path .\file.csv -Header 'ExtensionData','AlternateEmailAddresses','AlternateMobilePhones','AlternativeSecurityIds','BlockCredential','City','CloudExchangeRecipientDisplayType','Country','Department','DirSyncProvisioningErrors','DisplayName','Errors','Fax','FirstName','ImmutableId','IndirectLicenseErrors','IsBlackberryUser','IsLicensed','LastDirSyncTime','LastName','LastPasswordChangeTimestamp','LicenseAssignmentDetails','LicenseReconciliationNeeded','Licenses','LiveId','MSExchRecipientTypeDetails','MSRtcSipDeploymentLocator','MSRtcSipPrimaryUserAddress','MobilePhone','ObjectId','Office','OverallProvisioningStatus','PasswordNeverExpires','PasswordResetNotRequiredDuringActivate','PhoneNumber','PortalSettings','PostalCode','PreferredDataLocation','PreferredLanguage','ProxyAddresses','ReleaseTrack','ServiceInformation','SignInName','SoftDeletionTimestamp','State','StreetAddress','StrongAuthenticationMethods','StrongAuthenticationPhoneAppDetails','StrongAuthenticationProofupTime','StrongAuthenticationRequirements','StrongAuthenticationUserDetails','StrongPasswordRequired','StsRefreshTokensValidFrom','Title','UsageLocation','UserLandingPageIdentifierForO365Shell','UserPrincipalName','UserThemeIdentifierForO365Shell','UserType','ValidationStatus','WhenCreated'
+
+$data.UserPrincipalName
+
+Foreach ($user in  $lele.UserPrincipalName) { Write-Output "pipa $user" } 
+
+
+Get-AzureADGroup -Filter "startswith(DisplayName,'All Autopilot Kiosk Devices for ')" | Where {($_.GroupTypes -eq 'DynamicMembership')} 
+Get-AzureADMSGroup -All:$True | Where {($_.GroupTypes -eq 'DynamicMembership')} | Where {($_.DisplayName -Like "All Autopilot Kiosk Devices of*")}
+
+
+
+# Find Azure AD User based on attribute
+Get-AzureADUser -All:$true -Filter '*' -Properties * | select DisplayName,UserPrincipalName,Department
+
+
+
+
+
+
+# LAPS
+
+# Required Module
+Import-Module AdmPwd.PS
+
+# Find Extended Rights for LAPS 
+Find-AdmPwdExtendedRights -Identity "OU=Vionet,DC=corp,DC=vionet,DC=gr" | Select ObjectDN, @{Name='ExtendedRightHolders';Expression={[string]::join(";", ($_.ExtendedRightHolders))}} 
+Find-AdmPwdExtendedRights -Identity "OU=Sidenor Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" | Select ObjectDN, @{Name='ExtendedRightHolders';Expression={[string]::join(";", ($_.ExtendedRightHolders))}}
+Find-AdmPwdExtendedRights -Identity "OU=Steelmet Adm,OU=Vionet,DC=corp,DC=vionet,DC=gr" | Select ObjectDN, @{Name='ExtendedRightHolders';Expression={[string]::join(";", ($_.ExtendedRightHolders))}}
+
+# Run the included PowerShell cmdlet “Set-AdmPwdComputerSelfPermission” to delegate rights for every computer in an OU (or the domain) to update its own computer attribute containing the local admin password (ms-Mcs-AdmPwd).
+Set-AdmPwdComputerSelfPermission -OrgUnit ""
+
+# Run the included PowerShell cmdlet “Set-AdmPwdReadPasswordPermission” to delegate rights for a group to view local administrator account passwords in the specified OU.
+Set-AdmPwdReadPasswordPermission -OrgUnit "" -AllowedPrincipals "VIONET\" 
+
+# Run the included PowerShell cmdlet “Set-AdmPwdResetPasswordPermission” to delegate rights for a group to force local administrator account passwords in the specified OU to change (ms-Mcs-AdmPwdExpirationTime).
+Set-AdmPwdResetPasswordPermission -OrgUnit "" -AllowedPrincipals "VIONET\"
+
+# 
+Get-ADObject -SearchBase "OU=Vionet,DC=corp,DC=vionet,DC=gr" -Filter * | % { Get-ADPermission -identity $_.DistinguishedName } | fl identity,user,extendedrights,accessrights
+
+
+# RUN REMOTE COMMAND ON POWERSHELL 
+Invoke-Command -ComputerName COMPUTER -ScriptBlock { Remove-LocalGroupMember -Group "Administrators" -Member "" } -credential VIONET\distathopoulosadmin
+# Remove local admins:
+Invoke-Command -ComputerName COMPUTER -ScriptBlock { Remove-LocalGroupMember -Group "Administrators" -Member "TPMSKARTHPC\skarth" } -credential VIONET\distathopoulosadmin
+
+
+# OMS Gateway 
+Add-OMSGatewayAllowedHost we-jobruntimedata-prod-su1.azure-automation.net # get hostname from windows event logs - OMS Gateway Log
+ ?    
+Restart-Service OMSGatewayService
+
+
+# Export list of VMs from VMM
+Get-SCVirtualMachine | Select-object Name,CPUCount,MemoryAssignedMB,TotalSize,Location,VMHost,HasVMAdditions,IsHighlyAvailable | Sort-Object -Property Name | Export-Csv .\vm-list.csv
+Get-SCVirtualMachine | Select-object Name,ComputerName,Description,CPUCount,MemoryAssignedMB,MemoryHostGroupPath,VMCPath,Location,TotalSize,VMHost,HasVMAdditions,IsHighlyAvailable | Sort-Object -Property Name | export-csv VMM_List.csv
+
+
+# DSC
+# Enroll system
+Set-DscLocalConfigurationManager -Path C:\DSC\DscMetaConfigs -ComputerName <server name>
+Get-DscLocalConfigurationManager -ComputerName <server name>
+# Pull config from server
+ServerConfig
+# Apply config 
+Start-DscConfiguration -Path "C:\DSC\Configurations\" -Wait -Verbose
+# Test config on local computer
+Test-DscConfiguration -Verbose
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# GMSA Account -Scheduled Task
+# Create GMSA Account
+New-ADServiceAccount "gMSA-ps-sch-tsk" -DNSHostName "gMSA-Powershell.corp.vionet.gr" –PrincipalsAllowedToRetrieveManagedPassword "gMSA_ScheduledTask_Servers"
+Install-ADServiceAccount -Identity "gMSA-ps-sch-tsk"
+Test-ADServiceAccount "gMSA-ps-sch-tsk"
+
+# SCHEDULED TASK TO NOTIFY USERS VIA EMAIL
+#Create Scheduled task
+$principal = New-ScheduledTaskPrincipal -UserID "VIONET\gMSA-ps-sch-tsk$" -LogonType Password
+$trigger = New-ScheduledTaskTrigger -At 11:00pm –Daily 
+$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-ExecutionPolicy Bypass -File C:\Scripts\PasswordChangeNotificationv1.ps1 -smtpServer smtstlmrs.corp.vionet.gr -expireInDays 20 -from ""Password Checker <it@vionet.gr>"" -testing -testRecipient distathopoulos@steelmet.vionet.gr -interval 1,2,3,4,5,10,15 -Logging -LogPath C:\LogFiles\ "
+Register-ScheduledTask Service -TaskName "Monitor_Password_Expiration" -Description "Emails Users for password expiration" –Action $action –Trigger $trigger –Principal $principal
+
+# SCHEDULED TASK TO LOCK ACCOUNTS MISSING ATTRIBUTES - every 15 minutes
+$principal = New-ScheduledTaskPrincipal -UserID "VIONET\gMSA-ps-sch-tsk$" -LogonType Password
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 15)
+$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-ExecutionPolicy Bypass -File C:\Scripts\DisableUsersWithMissingAttributes.ps1"
+Register-ScheduledTask Service -TaskName "Disable_Users_with_Missing_Attributes" -Description "Disable Users with missing company extensionAttribute15 and adminDisplayName" –Action $action –Trigger $trigger –Principal $principal
+
+# SCHEDULED TASK TO ADD Physical User ACCOUNTS TO Relevant Groups - every 30 minutes
+$principal = New-ScheduledTaskPrincipal -UserID "VIONET\gMSA-ps-sch-tsk$" -LogonType Password
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 30)
+$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-ExecutionPolicy Bypass -File C:\Scripts\PersistPhysicalUsersOnGroup.ps1"
+Register-ScheduledTask Service -TaskName "Persist_Physical_Users_on_BASELINE_Group" -Description "Persist Phyiscal Users on BaseLine Group" –Action $action –Trigger $trigger –Principal $principal
+
+# SCHEDULED TASK FOR R SERVER 
+#Create Scheduled task
+$principal = New-ScheduledTaskPrincipal -UserID "VIONET\gMSA-cd-sch-tsk$" -LogonType Password
+$trigger = New-ScheduledTaskTrigger -At 11:00pm –Daily 
+$action = New-ScheduledTaskAction -Execute "Yourbatchhere.bat"
+Register-ScheduledTask Service -TaskName "Monitor_Password_Expiration" -Description "Emails Users for password expiration" –Action $action –Trigger $trigger –Principal $principal
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
