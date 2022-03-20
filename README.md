@@ -1,4 +1,8 @@
 # AzAdmin
-Scripting for Azure &amp; Active Directory
+## Scripting adventures for Azure &amp; Active Directory
 
-This is a list of files that I have created for administering Active Directory &amp; Azure.
+Each directory contains a small quick & dirty project around Active Directory or Azure Active Directory. 
+I have included a README file on each directory to describe each project. 
+
+- [Rsyslog](https://www.rsyslog.com/) Server for Microsoft's [Sentinel](https://docs.microsoft.com/en-us/azure/sentinel/)
+- Mandatory Attributes for Active Directory
