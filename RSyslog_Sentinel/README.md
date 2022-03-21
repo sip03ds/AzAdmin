@@ -23,6 +23,8 @@ Assumptions:
 - Load balancer will work on a round robin fashion for dispatching logs to VM scale set
 - We will have unequal log sizes for each client
 - For DSC an already existing Automation account will be used
+- We already have a log analytics workspace for storing logs
+- Microsoft's Sentinel is configured for using the log analytics workspace
 
 Specifications:
 - NLB, VM Scaleset will be deployed on the same resource group 
@@ -35,10 +37,14 @@ Specifications:
 
 ```mermaid
     graph TD;
-        NLB-->Scale_Set_VM1;
-        NLB-->Scale_Set_VM2;
-        Scale_Set_VM1-->D;
-        Scale_Set_VM2-->D;
+        Syslog Clients-->NLB;
+        NLB-->Scale Set VM1;
+        NLB-->Scale Set VM2;
+        Scale Set VM1-->Docker VM;
+        Scale Set VM1-->Log Analytics Workspace;
+        Scale Set VM2-->Docker VM;
+        Scale Set VM2-->Log Analytics_Workspace;
+        Log Analytics_Workspace-->Sentinel;
 ```
 
 Azure SKUs to select:
