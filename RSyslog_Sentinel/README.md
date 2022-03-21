@@ -37,14 +37,14 @@ Specifications:
 
 ```mermaid
     graph TD;
-        Syslog Clients-->NLB;
-        NLB-->Scale Set VM1;
-        NLB-->Scale Set VM2;
-        Scale Set VM1-->Docker VM;
-        Scale Set VM1-->Log Analytics Workspace;
-        Scale Set VM2-->Docker VM;
-        Scale Set VM2-->Log Analytics_Workspace;
-        Log Analytics_Workspace-->Sentinel;
+        Syslog_Clients-->NLB;
+        NLB-->Scale_Set_VM1;
+        NLB-->Scale_Set_VM2;
+        Scale_Set_VM1-->Docker_VM;
+        Scale_Set_VM1-->Log_Analytics_Workspace;
+        Scale_Set_VM2-->Docker_VM;
+        Scale_Set_VM2-->Log_Analytics_Workspace;
+        Log_Analytics_Workspace-->Sentinel;
 ```
 
 Azure SKUs to select:
