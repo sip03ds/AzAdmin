@@ -37,7 +37,7 @@ Specifications:
 
 ```mermaid
     graph TD;
-        Syslog_Clients-->NLB;
+        Syslog Clients-->NLB;
         NLB-->Scale_Set_VM1;
         NLB-->Scale_Set_VM2;
         Scale_Set_VM1-->Docker_VM;
