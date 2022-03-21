@@ -1,6 +1,6 @@
 # Rsyslog for Sentinel
 ## A redundant & robust Rsyslog Server for ingesting logs to sentinel
-### Needs 
+### Requirements 
 Sentinel relies on Linux Rsyslog server for capturing data from various firewall solutions (checkpoint - fortigate - darktrace).
 
 Our task is to build a fully redundant [virtual machine scale set](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/overview) that can scale up or down on Azure and will host an RSYSLOG server and dispatch the data to Sentinel
@@ -14,3 +14,10 @@ The scale set will need an [OMS agent](https://github.com/microsoft/OMS-Agent-fo
 The scale set will need to be part of a configuration management system where all conf files will be hosted and persisted. 
 
 ### Breaking down the requirements
+Assumptions:
+- We already have VNET where we will deploy all our components 
+- We have a dedicated subnet where all devices will be connected to
+- We will have a NSG that will allow traffic to all devices
+- Azure is alreayd connected with on premise devices (syslog clients)
+- All networking devices are configured to dispatch syslogs to network load balancer's external IP
+
