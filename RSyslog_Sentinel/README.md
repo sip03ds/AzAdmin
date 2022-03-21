@@ -43,9 +43,11 @@ Specifications:
         Scale_Set_VM1-->Docker_VM;
         Scale_Set_VM1-->Log_Analytics_Workspace;
         Scale_Set_VM2-->Docker_VM;
+        Docker_VM-->CASB;
         Scale_Set_VM2-->Log_Analytics_Workspace;
         Log_Analytics_Workspace-->Sentinel;
-        Docker_VM-->Sentinel;
+        CASB-->Sentinel;
+        
 ```
 
 Azure SKUs to select:
