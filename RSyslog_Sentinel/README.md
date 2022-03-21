@@ -13,11 +13,36 @@ The scale set will need an [OMS agent](https://github.com/microsoft/OMS-Agent-fo
 
 The scale set will need to be part of a configuration management system where all conf files will be hosted and persisted. 
 
-### Breaking down the requirements
+### Design
 Assumptions:
 - We already have VNET where we will deploy all our components 
 - We have a dedicated subnet where all devices will be connected to
 - We will have a NSG that will allow traffic to all devices
-- Azure is alreayd connected with on premise devices (syslog clients)
+- Azure is already connected with on premise devices (syslog clients)
 - All networking devices are configured to dispatch syslogs to network load balancer's external IP
+- Load balancer will work on a round robin fashion for dispatching logs to VM scale set
+- We will have unequal log sizes for each client
+- For DSC an already existing Automation account will be used
 
+Specifications:
+- NLB, VM Scaleset will be deployed on the same resource group 
+- The scale set will have 2 VMs with the same specifications (2 vCPU, 8GB RAM , 32GB temp storage)
+- The scale set will increase if CPU on one VM is running above 75% for 5 minutes
+- The scale set will be able to grow up to 4 VMs in total
+- VM Generation 2 will be used 
+- Each VM will have a single Network interface unit
+- We will use Centos 7.9 OS with the latest updates
+
+```mermaid
+    graph TD;
+        NLB-->Scale_Set_VM1;
+        NLB-->Scale_Set_VM2;
+        Scale_Set_VM1-->D;
+        Scale_Set_VM2-->D;
+```
+
+Azure SKUs to select:
+- Standard NLB
+- D2s_v3 with extra data SSD premium hard disk (256GB) for the logs
+
+### Implementation
