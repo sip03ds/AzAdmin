@@ -43,7 +43,7 @@ Specifications:
         Scale_Set_VM1-->Docker_VM;
         Scale_Set_VM1-->Log_Analytics_Workspace;
         Scale_Set_VM2-->Docker_VM;
-        Docker_VM-->CASB;
+        Docker_VM-->Cloud_App_Security;
         Scale_Set_VM2-->Log_Analytics_Workspace;
         Log_Analytics_Workspace-->Sentinel;
         CASB-->Sentinel;
