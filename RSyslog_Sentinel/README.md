@@ -46,7 +46,7 @@ Specifications:
         Docker_VM-->Cloud_App_Security;
         Scale_Set_VM2-->Log_Analytics_Workspace;
         Log_Analytics_Workspace-->Sentinel;
-        CASB-->Sentinel;
+        Cloud_App_Security-->Sentinel;
         
 ```
 
