@@ -3,7 +3,7 @@
 ### Requirements 
 Sentinel relies on Linux Rsyslog server for capturing data from various firewall solutions (checkpoint - fortigate - darktrace).
 
-Our task is to build a fully redundant [virtual machine scale set](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/overview) that can scale up or down on Azure and will host an RSYSLOG server and dispatch the data to Sentinel
+Our task is to build a fully redundant [virtual machine scale set](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/overview) that can scale up or down on Azure and will host an RSYSLOG server and dispatch the data to Sentinel.
 
 We will have to create different log files on every RSYSLOG server (vm on scaleset) for each vendor that dispathces data (e.g. fortinet) by tweaking rsyslog.conf file. 
 
@@ -13,27 +13,28 @@ The scale set will need an [OMS agent](https://github.com/microsoft/OMS-Agent-fo
 
 The scale set will need to be part of a configuration management system where all conf files will be hosted and persisted. 
 
+### Requirements Breakdown 
+- NLB, VM Scaleset will be deployed on the same resource group. 
+- The scale set will have 2 VMs with the same specifications (2 vCPU, 8GB RAM , 32GB temp storage).
+- The scale set will increase if CPU on one VM is running above 75% for 5 minutes.
+- The scale set will be able to grow up to 4 VMs in total.
+- The scale set should have the ability to mount dynamically their hard disks.
+- We should assume that we are expecting high data volume from the clients (80GB/hour) for each log.   
+
 ### Design
 Assumptions:
-- We already have VNET where we will deploy all our components 
-- We have a dedicated subnet where all devices will be connected to
-- We will have a NSG that will allow traffic to all devices
-- Azure is already connected with on premise devices (syslog clients)
-- All networking devices are configured to dispatch syslogs to network load balancer's external IP
-- Load balancer will work on a round robin fashion for dispatching logs to VM scale set
-- We will have unequal log sizes for each client
-- For DSC an already existing Automation account will be used
-- We already have a log analytics workspace for storing logs
-- Microsoft's Sentinel is configured for using the log analytics workspace
-
-Specifications:
-- NLB, VM Scaleset will be deployed on the same resource group 
-- The scale set will have 2 VMs with the same specifications (2 vCPU, 8GB RAM , 32GB temp storage)
-- The scale set will increase if CPU on one VM is running above 75% for 5 minutes
-- The scale set will be able to grow up to 4 VMs in total
-- VM Generation 2 will be used 
-- Each VM will have a single Network interface unit
-- We will use Centos 7.9 OS with the latest updates
+- We already have an Azure Subscription to deploy our solution.
+- We already have VNET where we will deploy all our components.
+- We have a dedicated subnet where all devices will be connected to.
+- We will have a NSG that will allow traffic to all devices.
+- Azure is already connected with on premise devices (syslog clients).
+- All networking devices are configured to dispatch syslogs to network load balancer's external IP.
+- Load balancer will work on a round robin fashion for dispatching logs to VM scale set.
+- We will have unequal log sizes for each client.
+- For DSC an already existing automation account will be used.
+- We already have a log analytics workspace for storing logs.
+- Log analytics workspace and automation is already associated. 
+- Microsoft's Sentinel is configured for using the log analytics workspace.
 
 ```mermaid
     graph TD;
@@ -50,8 +51,25 @@ Specifications:
         
 ```
 
-Azure SKUs to select:
-- Standard NLB
-- D2s_v3 with extra data SSD premium hard disk (256GB) for the logs
+### Tests for approving system functionality
+1. Setup NLB & VMs and send logs to the NLB.
+   We should see logs on both Virtual Machines.
+2. Logs will fill up 90% of hard disk space.
+   Logrotate should rotate the log files and empty hard disk drive of log archives.
+3. CPU of one of the VMs reaches 75% consumption for over 5 minutes.
+   A new VM will start with the same configuration as the rest of the VMs.
+   NLB rules should update automatically and logs should be dispatched to the new VM.
+4. CPU of one of the VMs is below 75% consumption for over 5 minutes.
+   The extra VM should stop. 
+   NLB rules should update automatically and logs should be dispatched to the remaining VMs. 
 
+Azure SKUs to select:
+- Standard NLB.
+- D2s_v3 with extra data SSD premium hard disk (256GB) for the logs.
+- Flexible VM Scale Set. 
+- Each VM will have a single Network interface unit.
+- Network acceleration must be used.
+- VM Generation 2 will be used.
+- We will use Centos 7.9 OS with the latest updates.
+ 
 ### Implementation
