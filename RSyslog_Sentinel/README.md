@@ -100,10 +100,10 @@ VM configuration
 Our implementation will follow a bottom up approach. We will configure all componenents and then mix them together on an [ARM template](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/) to deploy all components on Azure.
 | Configuration | README                       |
 | ------------- | ---------------------------- |
-| cloud-init    | [cloud-init/README.md][PlDb] |
+| cloud-init    | [cloud-init/README.md][ci] |
 
 
 
 
-[PlDb]: <https://github.com/sip03ds/AzAdmin/tree/original/RSyslog_Sentinel/cloud-init/README.md>
+[ci]: <https://github.com/sip03ds/AzAdmin/tree/original/RSyslog_Sentinel/cloud-init/README.md>
 
