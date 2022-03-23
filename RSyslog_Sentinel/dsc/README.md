@@ -1,5 +1,7 @@
 # DSC Configuration for Automation Account
 
+[Rsyslog.ps1](https://github.com/sip03ds/AzAdmin/blob/original/RSyslog_Sentinel/dsc/Rsyslog.ps1)
+
 1. Use nx module. 
 2. Create a function that will handle EOF on Linux
 3. Create file contents for:
