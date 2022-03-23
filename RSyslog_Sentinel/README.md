@@ -103,7 +103,5 @@ Our implementation will follow a bottom up approach. We will configure all compo
 | cloud-init        | [cloud-init/README.md][ci] |
 | dsc               | [dsc/README.md][dsc]       |
 
-
-
 [ci]: <https://github.com/sip03ds/AzAdmin/tree/original/RSyslog_Sentinel/cloud-init/README.md>
 [dsc]: <https://github.com/sip03ds/AzAdmin/tree/original/RSyslog_Sentinel/dsc/README.md>
