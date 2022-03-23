@@ -98,10 +98,10 @@ VM configuration
 
 ### Implementation
 Our implementation will follow a bottom up approach. We will configure all componenents and then mix them together on an [ARM template](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/) to deploy all components on Azure.
-| Configuration | README                       |
-| ------------- | ---------------------------- |
-| cloud-init    | [cloud-init/README.md][ci]   |
-| dsc           | [dsc/README.md][dsc]         |
+| **Configuration** | **README**                 |
+| ----------------- | ---------------------------|
+| cloud-init        | [cloud-init/README.md][ci] |
+| dsc               | [dsc/README.md][dsc]       |
 
 
 
