@@ -97,7 +97,7 @@ VM configuration
 - All log files for syslog will be hosted on /var/log/rsyslog
 
 ### Implementation
-Our implementation will follow a bottom up approach. We will configure all componenents and then mix them together on an [ARM template](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/) to deploy all components on Azure.
+Our implementation will follow a bottom up approach. We will configure all components and then mix them together on an [ARM template](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/) to deploy all components on Azure.
 | **Configuration** | **README**                 |
 | ----------------- | ---------------------------|
 | cloud-init        | [cloud-init/README.md][ci] |
