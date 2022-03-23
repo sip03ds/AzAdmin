@@ -33,3 +33,4 @@
     - PSDesiredStateConfiguration
     - nx
 15. Register machine on automation account. 
+16. Set a final message to mark cloud-init config execution completion.
