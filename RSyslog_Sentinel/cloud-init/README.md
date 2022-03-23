@@ -1,5 +1,7 @@
 # Cloud Init Configuration
 
+[linux_rsyslog.yml](https://github.com/sip03ds/AzAdmin/blob/original/RSyslog_Sentinel/cloud-init/linux_rsyslog.yml)
+
 1. Add Microsoft Repositories. 
    - MS repo for Centos 7
    - MS repo for RHEL 7
