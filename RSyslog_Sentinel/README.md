@@ -11,15 +11,17 @@ Rsyslog server will have to forward specific log files on docker image. The dock
 
 The scale set will need an [OMS agent](https://github.com/microsoft/OMS-Agent-for-Linux) for dispatching the logs to the log analytics workspace that Sentinel is using. 
 
-The scale set will need to be part of a configuration management system where all conf files will be hosted and persisted. 
+The scale set will need to be part of a configuration management system where all conf files will be hosted and persisted during boot time and during runtime.
 
 ### Requirements Breakdown 
 - NLB, VM Scaleset will be deployed on the same resource group. 
-- The scale set will have 2 VMs with the same specifications (2 vCPU, 8GB RAM , 32GB temp storage).
+- The scale set will have 2 VMs with the same specifications.
 - The scale set will increase if CPU on one VM is running above 75% for 5 minutes.
 - The scale set will be able to grow up to 4 VMs in total.
 - The scale set should have the ability to mount dynamically their hard disks.
 - We should assume that we are expecting high data volume from the clients (80GB/hour) for each log.   
+- We will use cloud-init configuration for applying configuration during boot time.
+- We will use Azure Automation account and apply DSC configuration for persisting configuration every 15 minutes.
 
 ### Design
 Assumptions:
@@ -70,6 +72,30 @@ Azure SKUs to select:
 - Each VM will have a single Network interface unit.
 - Network acceleration must be used.
 - VM Generation 2 will be used.
-- We will use Centos 7.9 OS with the latest updates.
  
+NLB configuration
+- We will have a frontend configuration with a public IP.
+- We will have 2 backend pools for the syslog servers - TCP 514 & UDP 514 will be forwarded to each VM.
+- We will have a health probe that will check every 5 seconds if the VMs can respond on 3 consecutive packets on TCP 514 port.
+
+VM configuration
+- VMs will have 2 vCPUs , 8GB RAM and 32GB temporary hard disk.
+- VMs will have swap file enabled.
+- All hard disks will be SSD Premium optimized for both data write & read. 
+- We will use an extra data disk of 512GB for hosting RSYSLOG files.
+- We will use SSH PEM keys for accessing the VM.
+- We will use Centos 7.9 OS and apply the latest updates.
+- We will use cloud-init for applying the configuration during boot.
+- We will use DSC to check & apply DSC configuration from azure automation account. 
+- VMs will use Azure Linux VM agent to deploy Azure VM extensions. 
+- We will use the following VM extentions:
+    - asdasd
+    - adsasad
+    - adsa
+- That's all folks
+
 ### Implementation
+For deployment we will use an ARM template for deploying the configuration 
+
+We will initiate by creating the configuration files for persisting configuration on VMs. 
+We will deploy an ARM template 
