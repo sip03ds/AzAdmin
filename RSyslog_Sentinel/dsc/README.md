@@ -22,4 +22,4 @@
    - wget
    - DSC
 5. Ensure that all files with the contents created are created on the right path
-6. Ensure that rsyslog daemon is running
+6. Ensure that [rsyslog](https://www.rsyslog.com) daemon is running
