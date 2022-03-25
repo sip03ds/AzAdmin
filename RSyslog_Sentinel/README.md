@@ -98,11 +98,11 @@ VM configuration
 
 ### Implementation
 Our implementation will follow a bottom up approach. We will configure all components and then mix them together on an [ARM template](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/) to deploy all components on Azure.
-| **Configuration** | **README**                 |
-| ----------------- | ---------------------------|
-| cloud-init        | [cloud-init/README.md][ci] |
-| dsc               | [dsc/README.md][dsc]       |
-| ssh keys for VMs  | [ssh/README.md][ssh]       |
+| **Configuration** | **README**                 |**Need**                                                |
+| ----------------- | ---------------------------|--------------------------------------------------------|
+| cloud-init        | [cloud-init/README.md][ci] |For setting up the configuration of VMs during boot-time|
+| dsc               | [dsc/README.md][dsc]       |For setting up the configuration during runtime         |
+| ssh keys for VMs  | [ssh/README.md][ssh]       |For accessing the VMs using ssh                         |
 
 [ci]: <https://github.com/sip03ds/AzAdmin/tree/original/RSyslog_Sentinel/cloud-init/README.md>
 [dsc]: <https://github.com/sip03ds/AzAdmin/tree/original/RSyslog_Sentinel/dsc/README.md>
