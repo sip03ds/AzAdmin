@@ -89,10 +89,13 @@ VM configuration
 - We will use DSC to check & apply DSC configuration from azure automation account. 
 - VMs will use Azure Linux VM agent to deploy Azure VM extensions. 
 - We will use the following VM extentions:
+    - Waagent Linux Azure VM Agent - for interfacing between VM & Azure
+    - Azure Disk Encryption for Linux - for encrypting HDD of Linux
     - AADSSHLoginForLinux - for logging in with Azure AD accounts
     - MDE.Linux - Defender Antivirus  
     - VulnerabilityAssement - Vulnerability Assessment
     - IaaSAntimalware - Antimalware 
+    - 
 - We will disable SELinux
 - All log files for syslog will be hosted on /var/log/rsyslog
 
