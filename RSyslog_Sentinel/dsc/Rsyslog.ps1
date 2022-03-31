@@ -408,8 +408,10 @@ if $programname == 'darktrace-log' then stop
 
 $crontab = @'
 0 * * * * /usr/bin/rm -f /var/log/rsyslog/archives/*
-0,15 * * * * /usr/sbin/logrotate /etc/logrotate.d/rsyslog
-0,15 * * * * /usr/sbin/logrotate /etc/logrotate.d/syslog
+0,15,30,45 * * * * /usr/sbin/logrotate /etc/logrotate.d/rsyslog
+0,15,30,45 * * * * /usr/sbin/logrotate /etc/logrotate.d/syslog
+0 21 * * *  
+
 '@
 
 $configureCrontabGetScript = @'
