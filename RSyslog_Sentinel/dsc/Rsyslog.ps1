@@ -408,9 +408,9 @@ if $programname == 'darktrace-log' then stop
 
 $crontab = @'
 0 * * * * /usr/bin/rm -f /var/log/rsyslog/archives/*
-0,15,30,45 * * * * /usr/sbin/logrotate /etc/logrotate.d/rsyslog
-0,15,30,45 * * * * /usr/sbin/logrotate /etc/logrotate.d/syslog
-0 21 * * *  
+*/15 * * * * /usr/sbin/logrotate /etc/logrotate.d/rsyslog
+*/15 * * * * /usr/sbin/logrotate /etc/logrotate.d/syslog  
+0 21 * * * /bin/mdatp scan quick > /var/log/mdatp_cron_job.log 
 
 '@
 
@@ -458,6 +458,46 @@ $configureMsRepoSetScript = @'
 /usr/bin/sudo /usr/bin/rpm -Uvh https://packages.microsoft.com/config/rhel/7/packages-microsoft-prod.rpm
 '@
 
+$configureMdatp = @'
+{
+    "antivirusEngine":{
+       "behaviorMonitoring":"enabled",
+       "enforcementLevel":"real_time",
+       "scanAfterDefinitionUpdate":true,
+       "scanArchives":true,
+       "maximumOnDemandScanThreads":2,
+       "exclusionsMergePolicy":"merge",
+       "exclusions":[
+       ],
+       "allowedThreats":[
+          ""
+       ],
+       "disallowedThreatActions":[
+          "allow",
+          "restore"
+       ],
+       "threatTypeSettingsMergePolicy":"merge",
+       "threatTypeSettings":[
+          {
+             "key":"potentially_unwanted_application",
+             "value":"block"
+          },
+          {
+             "key":"archive_bomb",
+             "value":"block"
+          }
+       ]
+    },
+    "cloudService":{
+       "enabled":true,
+       "diagnosticLevel":"required",
+       "automaticSampleSubmissionConsent":"all",
+       "automaticDefinitionUpdateEnabled":true,
+       "proxy": ""
+    }
+ }
+'@
+
         $rsyslogConf = LinuxString $rsyslogConf
         $logrotateRsyslog = LinuxString $logrotateRsyslog
         $forwardF5 = LinuxString $forwardF5  
@@ -471,6 +511,7 @@ $configureMsRepoSetScript = @'
         $configureMsRepoGetScript = LinuxString $configureMsRepoGetScript 
         $configureMsRepoTestScript = LinuxString $configureMsRepoTestScript
         $configureMsRepoSetScript = LinuxString $configureMsRepoSetScript
+        $configureMdatp = LinuxString $configureMdatp
 
         nxPackage rsyslog
         {
@@ -612,6 +653,24 @@ $configureMsRepoSetScript = @'
             Ensure            = 'Present'
             PackageManager    = 'Yum'
             DependsOn = "[nxScript]configureMsRepo"
+        }
+
+        nxPackage mdatp
+        {
+            Name              = 'mdatp'
+            Ensure            = 'Present'
+            PackageManager    = 'Yum'
+            DependsOn = "[nxScript]configureMsRepo"
+        }
+
+        nxFile mdatpConfiguration
+        {
+            Ensure = "Present"
+            DestinationPath = "/etc/opt/microsoft/mdatp/managed/mdatp_managed.json"
+            Mode = "644"
+            Type = "File"
+            Contents = $configureMdatp
+            DependsOn = "[nxFile]crontabDirectory"
         }
 
     }

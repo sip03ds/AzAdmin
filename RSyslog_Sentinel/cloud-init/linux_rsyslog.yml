@@ -459,8 +459,9 @@
     permissions: '0644'
     content: |
         0 * * * * /usr/bin/rm -f /var/log/rsyslog/archives/*
-        0,15,30,45 * * * * /usr/sbin/logrotate /etc/logrotate.d/rsyslog
-        0,15,30,45 * * * * /usr/sbin/logrotate /etc/logrotate.d/syslog 
+        */15 * * * * /usr/sbin/logrotate /etc/logrotate.d/rsyslog
+        */15 * * * * /usr/sbin/logrotate /etc/logrotate.d/syslog
+        0 21 * * * /bin/mdatp scan quick > /var/log/mdatp_cron_job.log 
         
         
   - owner: root:root
