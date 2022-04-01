@@ -410,7 +410,7 @@ $crontab = @'
 0 * * * * /usr/bin/rm -f /var/log/rsyslog/archives/*
 */15 * * * * /usr/sbin/logrotate /etc/logrotate.d/rsyslog
 */15 * * * * /usr/sbin/logrotate /etc/logrotate.d/syslog  
-0 21 * * * /bin/mdatp scan quick > /var/log/mdatp_cron_job.log 
+0 21 * * * /bin/mdatp scan full > /var/log/mdatp_cron_job.log 
 
 '@
 

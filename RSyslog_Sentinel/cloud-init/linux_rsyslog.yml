@@ -24,6 +24,7 @@
     - omi
     - powershell
     - tree
+    - mdatp
 
   disk_setup:
     /dev/disk/azure/scsi1/lun0:
@@ -461,9 +462,9 @@
         0 * * * * /usr/bin/rm -f /var/log/rsyslog/archives/*
         */15 * * * * /usr/sbin/logrotate /etc/logrotate.d/rsyslog
         */15 * * * * /usr/sbin/logrotate /etc/logrotate.d/syslog
-        0 21 * * * /bin/mdatp scan quick > /var/log/mdatp_cron_job.log 
+        0 21 * * * /bin/mdatp scan full > /var/log/mdatp_cron_job.log 
         
-        
+
   - owner: root:root
     path: /etc/rsyslog.d/99-darktrace.conf
     permissions: '0644'
@@ -479,6 +480,48 @@
 
         if $programname == 'darktrace-log' then @10.60.228.17:514;darktrace-log
         if $programname == 'darktrace-log' then stop
+
+  - owner: root:root
+    path: /etc/opt/microsoft/mdatp/managed/mdatp_managed.json
+    permissions: '0644'
+    content: |
+        {
+          "antivirusEngine":{
+            "behaviorMonitoring":"enabled",
+            "enforcementLevel":"real_time",
+            "scanAfterDefinitionUpdate":true,
+            "scanArchives":true,
+            "maximumOnDemandScanThreads":2,
+            "exclusionsMergePolicy":"merge",
+            "exclusions":[
+            ],
+            "allowedThreats":[
+                ""
+            ],
+            "disallowedThreatActions":[
+                "allow",
+                "restore"
+            ],
+            "threatTypeSettingsMergePolicy":"merge",
+            "threatTypeSettings":[
+                {
+                  "key":"potentially_unwanted_application",
+                  "value":"block"
+                },
+                {
+                  "key":"archive_bomb",
+                  "value":"block"
+                }
+            ]
+          },
+          "cloudService":{
+            "enabled":true,
+            "diagnosticLevel":"required",
+            "automaticSampleSubmissionConsent":"all",
+            "automaticDefinitionUpdateEnabled":true,
+            "proxy": ""
+          }
+        }
 
   runcmd:
   # - whoami >> /home/azureuser/lele.txt
