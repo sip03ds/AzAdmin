@@ -68,7 +68,7 @@ Assumptions:
 Azure SKUs to select:
 - Standard NLB.
 - D2s_v3 with extra data SSD premium hard disk (256GB) for the logs.
-- Flexible VM Scale Set. 
+- Uniform VM Scale Set. 
 - Each VM will have a single Network interface unit.
 - Network acceleration must be used.
 - VM Generation 2 will be used.
