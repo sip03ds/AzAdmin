@@ -492,8 +492,7 @@ $configureMdatp = @'
        "enabled":true,
        "diagnosticLevel":"required",
        "automaticSampleSubmissionConsent":"all",
-       "automaticDefinitionUpdateEnabled":true,
-       "proxy": ""
+       "automaticDefinitionUpdateEnabled":true
     }
  }
 '@
