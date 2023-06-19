@@ -1,0 +1,44 @@
+(device.displayName -startsWith  "CPW") and (device.deviceOSVersion -startsWith "10.0") and (device.DeviceOSType -startsWith "Windows")
+
+
+Dynamic Group Devices - Uses displayName, deviceOSVersion and DeviceOSType Attribute to assign supported devices for IT Department of CPW
+
+
+
+Supported Windows 10 Devices of IT Department of CABLEL
+
+Dynamic Group Devices - Uses displayName, deviceOSVersion and DeviceOSType Attribute to assign supported devices for IT Department of CABLEL
+
+
+Replace %2D with –
+
+Replace %7B with {
+
+Replace %7D with }
+
+Replace %3A with :
+
+Replace %2F with /
+
+Replace %2E with .
+%5F
+
+
+tenantId=ac16fc13-eed0-45a8-a4cd-092120207ca4&siteId={9920f172-91a0-4bac-a8f7-75256dc68090}&webId={381a4b75-b1ee-4cfe-9c88-6363173bdbff}&listId={4C42E376-DAC8-46D5-A5C5-FDDAAE44EF33}&webUrl=https://viohalco.sharepoint.com/sites/IT_Departments&version=1
+
+
+#Silently sign in users to the OneDrive sync client with their Windows credentials
+$LibraryName = "SharePoint_Library_Name"
+$LibraryID = "ac16fc13-eed0-45a8-a4cd-092120207ca4&siteId={9920f172-91a0-4bac-a8f7-75256dc68090}&webId={381a4b75-b1ee-4cfe-9c88-6363173bdbff}&listId={4C42E376-DAC8-46D5-A5C5-FDDAAE44EF33}&webUrl=https://viohalco.sharepoint.com/sites/IT_Departments&version=1"
+If(!(Test-Path $OneDriveRegistryPath)) {
+	New-Item -Path $OneDriveRegistryPath -Force | Out-Null
+	New-ItemProperty -Path $OneDriveRegistryPath -Name $LibraryName -Value $LibraryID -PropertyType STRING -Force | Out-Null
+}
+Else {
+	New-ItemProperty -Path $OneDriveRegistryPath -Name $LibraryName -Value $LibraryID -PropertyType STRING -Force | Out-Null
+}
+
+
+
+
+s_pwdchange
